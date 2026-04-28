@@ -5,6 +5,15 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { THEMES, type OrgProject } from "@/lib/org-chart";
 
 import { TreeNode } from "@/components/tree-node";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Download, Home, Printer, Upload } from "lucide-react";
+import Image from "next/image";
 
 type ProjectEditorProps = {
   activeProject: OrgProject;
@@ -15,7 +24,11 @@ type ProjectEditorProps = {
   onImportClick: () => void;
   onExportProject: () => void;
   onPrint: () => void;
-  onNodeFieldChange: (nodeId: string, field: "name" | "title", value: string) => void;
+  onNodeFieldChange: (
+    nodeId: string,
+    field: "name" | "title",
+    value: string,
+  ) => void;
   onOpenMenu: (nodeId: string, x: number, y: number, depth: number) => void;
 };
 
@@ -52,11 +65,20 @@ export function ProjectEditor({
 
     let frameId = 0;
     const syncChartSize = () => {
-      const width = Math.max(contentElement.scrollWidth, contentElement.offsetWidth);
-      const height = Math.max(contentElement.scrollHeight, contentElement.offsetHeight);
+      const width = Math.max(
+        contentElement.scrollWidth,
+        contentElement.offsetWidth,
+      );
+      const height = Math.max(
+        contentElement.scrollHeight,
+        contentElement.offsetHeight,
+      );
 
       setChartSize((current) => {
-        if (Math.abs(current.width - width) < 0.5 && Math.abs(current.height - height) < 0.5) {
+        if (
+          Math.abs(current.width - width) < 0.5 &&
+          Math.abs(current.height - height) < 0.5
+        ) {
           return current;
         }
 
@@ -127,57 +149,72 @@ export function ProjectEditor({
 
   return (
     <section className="editor-workspace flex min-h-0 flex-1 flex-col">
-      <header className="editor-toolbar print-hidden rounded-t-[14px] border border-[var(--panel-border)] bg-[var(--panel-bg)] px-3 py-3 shadow-sm md:px-4 md:py-3">
+      <header className="editor-toolbar print-hidden border border-[--panel-border] bg-[--panel-bg] px-3 py-3 shadow-sm md:px-4 md:py-3">
         <div className="flex flex-wrap items-center gap-2.5 md:gap-3">
           <button
             type="button"
-            className="secondary-btn inline-flex h-9 w-9 items-center justify-center px-0"
+            className="secondary-btn"
             onClick={onGoHome}
             title="Home"
             aria-label="Home"
           >
-            <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false" className="h-4 w-4 fill-current">
-              <path d="M10 2.7 2.7 8.9a1 1 0 1 0 1.3 1.52l.95-.81V16a1 1 0 0 0 1 1h2.8a1 1 0 0 0 1-1v-3.2h1.6V16a1 1 0 0 0 1 1h2.8a1 1 0 0 0 1-1V9.61l.95.81a1 1 0 0 0 1.3-1.52L10.65 2.7a1 1 0 0 0-1.3 0Z" />
-            </svg>
+            <Home />
           </button>
           <input
-            className="min-w-[220px] flex-1 rounded-lg border border-[var(--panel-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--main-text)] outline-none ring-[var(--accent-color)] focus:ring-2"
+            className="min-w-55 flex-1 rounded-lg border border-[--panel-border] bg-white px-3 py-2 text-sm font-semibold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
             value={activeProject.name}
             onChange={(event) => {
               onProjectNameChange(event.target.value);
             }}
             placeholder="Project name"
           />
-          <select
-            className="rounded-lg border border-[var(--panel-border)] bg-white px-3 py-2 text-sm font-medium text-[var(--main-text)] outline-none ring-[var(--accent-color)] focus:ring-2"
-            value={activeProject.themeId}
-            onChange={(event) => {
-              onThemeChange(event.target.value);
-            }}
+          <Select value={activeProject.themeId} onValueChange={onThemeChange}>
+            <SelectTrigger className="w-46 flex-none">
+              <SelectValue placeholder="Select theme" />
+            </SelectTrigger>
+            <SelectContent>
+              {THEMES.map((theme) => (
+                <SelectItem key={theme.id} value={theme.id}>
+                  {theme.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            className="secondary-btn"
+            onClick={onImportClick}
+            title="Import"
+            aria-label="Import"
           >
-            {THEMES.map((theme) => (
-              <option key={theme.id} value={theme.id}>
-                {theme.name}
-              </option>
-            ))}
-          </select>
-          <button className="secondary-btn" onClick={onImportClick}>
-            Import JSON
+            <Upload />
           </button>
-          <button className="secondary-btn" onClick={onExportProject}>
-            Export Project
+          <button
+            className="secondary-btn"
+            onClick={onExportProject}
+            title="Export"
+            aria-label="Export"
+          >
+            <Download />
           </button>
-          <button className="primary-btn" onClick={onPrint}>
-            Print / Save PDF
+          <button
+            className="primary-btn"
+            onClick={onPrint}
+            title="Print as PDF"
+            aria-label="Print as PDF"
+          >
+            <Printer />
           </button>
         </div>
       </header>
-
       <section
-        className="chart-surface relative min-h-0 flex-1 border border-t-0 p-3 md:p-4"
+        className="chart-surface relative min-h-0 flex-1"
         id="chart-print-area"
       >
-        <div className="zoom-controls print-hidden" role="group" aria-label="Zoom controls">
+        <div
+          className="zoom-controls print-hidden p-4"
+          role="group"
+          aria-label="Zoom controls"
+        >
           <button
             type="button"
             className="zoom-icon-btn"
@@ -215,7 +252,16 @@ export function ProjectEditor({
             {zoomPercent}%
           </span>
         </div>
-        <div className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted-text)]">
+        <div className="print-only px-4 pb-2 pt-4">
+          <Image
+            src="/INP%20Egypt%20logo%20full%20flat.svg"
+            alt="INP Egypt logo"
+            width={220}
+            height={62}
+            priority
+          />
+        </div>
+        <div className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-[--muted-text] p-4">
           {nodeCount} nodes in this chart
         </div>
         <div ref={chartViewportRef} className="chart-viewport">

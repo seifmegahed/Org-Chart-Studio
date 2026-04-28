@@ -439,8 +439,12 @@ body {
   font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  padding: 0.62rem 0.92rem;
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 320ms ease, box-shadow 320ms ease, background 320ms ease;
 }
 
 .primary-btn {
@@ -505,6 +509,10 @@ body {
   color: #b73333;
 }
 
+.print-only {
+  display: none !important;
+}
+
 @media (max-width: 900px) {
   .org-tree-root li {
     padding-inline: 0.45rem;
@@ -525,6 +533,10 @@ body {
 
   .print-hidden {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
   }
 
   .app-shell {
