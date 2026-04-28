@@ -27,7 +27,9 @@ describe("Home integration", () => {
     await user.type(projectNameInput, "Acme Org");
     await user.click(screen.getByRole("button", { name: "Create Project" }));
 
-    expect(await screen.findByDisplayValue("Acme Org")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Project name")).toHaveValue("Acme Org");
+    });
     expect(screen.getAllByRole("article")).toHaveLength(1);
 
     fireEvent.contextMenu(screen.getByRole("article"));
@@ -62,7 +64,9 @@ describe("Home integration", () => {
     const user = userEvent.setup();
     render(<Home />);
 
-    expect(await screen.findByDisplayValue("Stored Team")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Project name")).toHaveValue("Stored Team");
+    });
     expect(document.querySelector('main[data-theme="forest"]')).toBeTruthy();
 
     await user.click(screen.getByRole("combobox"));

@@ -2,7 +2,7 @@
 
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
-import { THEMES, type OrgProject } from "@/lib/org-chart";
+import { THEMES, type ChartLegend, type OrgProject } from "@/lib/org-chart";
 
 import { TreeNode } from "@/components/tree-node";
 import {
@@ -29,6 +29,7 @@ type ProjectEditorProps = {
     field: "name" | "title",
     value: string,
   ) => void;
+  onLegendFieldChange: (field: keyof ChartLegend, value: string) => void;
   onOpenMenu: (nodeId: string, x: number, y: number, depth: number) => void;
 };
 
@@ -50,6 +51,7 @@ export function ProjectEditor({
   onExportProject,
   onPrint,
   onNodeFieldChange,
+  onLegendFieldChange,
   onOpenMenu,
 }: ProjectEditorProps) {
   const chartViewportRef = useRef<HTMLDivElement | null>(null);
@@ -281,6 +283,62 @@ export function ProjectEditor({
             </div>
           </div>
         </div>
+        <aside className="chart-legend" aria-label="Chart legend" id="chart-legend">
+          <label>
+            <span>Title</span>
+            <input
+              value={activeProject.legend.title}
+              onChange={(event) => {
+                onLegendFieldChange("title", event.target.value);
+              }}
+              placeholder="Chart title"
+            />
+          </label>
+          <label>
+            <span>Created By</span>
+            <input
+              value={activeProject.legend.createdBy}
+              onChange={(event) => {
+                onLegendFieldChange("createdBy", event.target.value);
+              }}
+              placeholder="Author"
+            />
+          </label>
+          <label>
+            <span>Revised By</span>
+            <input
+              value={activeProject.legend.revisedBy}
+              onChange={(event) => {
+                onLegendFieldChange("revisedBy", event.target.value);
+              }}
+              placeholder="Reviewer"
+            />
+          </label>
+          <label>
+            <span>Date</span>
+            <input
+              type="date"
+              value={activeProject.legend.date}
+              onChange={(event) => {
+                onLegendFieldChange("date", event.target.value);
+              }}
+            />
+          </label>
+          <label>
+            <span>Revision</span>
+            <input
+              value={activeProject.legend.revisionNumber}
+              onChange={(event) => {
+                onLegendFieldChange("revisionNumber", event.target.value);
+              }}
+              placeholder="1"
+            />
+          </label>
+          <div className="chart-legend-row chart-legend-static">
+            <span>Nodes</span>
+            <strong>{nodeCount}</strong>
+          </div>
+        </aside>
       </section>
     </section>
   );

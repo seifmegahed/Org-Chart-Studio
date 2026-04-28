@@ -63,6 +63,71 @@ body {
   --button-muted: #e9edfb;
 }
 
+[data-theme="inp"] {
+  --page-bg: #fff4f1;
+  --panel-bg: #fffffff0;
+  --panel-border: #f2b1a8;
+  --main-text: #161616;
+  --muted-text: #5f5754;
+  --accent-color: #e8402e;
+  --line-color: #ec7d71;
+  --node-bg: #ffffff;
+  --node-border: #df6e61;
+  --button-muted: #ffe7e2;
+}
+
+[data-theme="aurora"] {
+  --page-bg: #e9fbfb;
+  --panel-bg: #ffffffe0;
+  --panel-border: #8fd8d2;
+  --main-text: #16393a;
+  --muted-text: #4d7172;
+  --accent-color: #0d9ea4;
+  --line-color: #79c8cb;
+  --node-bg: #ffffff;
+  --node-border: #61b7ba;
+  --button-muted: #e6f8f8;
+}
+
+[data-theme="graphite"] {
+  --page-bg: #edf1f5;
+  --panel-bg: #ffffffdf;
+  --panel-border: #a8b4c3;
+  --main-text: #1f2a38;
+  --muted-text: #5a6776;
+  --accent-color: #445b78;
+  --line-color: #95a5ba;
+  --node-bg: #ffffff;
+  --node-border: #73879f;
+  --button-muted: #e7edf4;
+}
+
+[data-theme="desert"] {
+  --page-bg: #fff6e8;
+  --panel-bg: #ffffffe0;
+  --panel-border: #e5c693;
+  --main-text: #4a3420;
+  --muted-text: #7d6247;
+  --accent-color: #bb7a2f;
+  --line-color: #dab078;
+  --node-bg: #fffefc;
+  --node-border: #d39a5a;
+  --button-muted: #fff0d8;
+}
+
+[data-theme="ruby"] {
+  --page-bg: #fff0f3;
+  --panel-bg: #ffffffe0;
+  --panel-border: #e2a9b7;
+  --main-text: #451923;
+  --muted-text: #7a4652;
+  --accent-color: #b62243;
+  --line-color: #d48497;
+  --node-bg: #ffffff;
+  --node-border: #c95e78;
+  --button-muted: #fde7ed;
+}
+
 .app-shell {
   background:
     radial-gradient(circle at 15% 8%, #ffffffb3 0%, transparent 38%),
@@ -137,6 +202,70 @@ body {
 .chart-zoom-frame {
   width: fit-content;
   height: fit-content;
+}
+
+.chart-legend {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 35;
+  width: min(95vw, 330px);
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, #ffffff 95%, transparent);
+  box-shadow: 0 18px 35px -22px rgba(0, 0, 0, 0.45);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.38rem;
+}
+
+.chart-legend h3 {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+
+.chart-legend label,
+.chart-legend-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.chart-legend label span,
+.chart-legend-row span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chart-legend input {
+  min-width: 0;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: #ffffff;
+  color: var(--main-text);
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.33rem 0.46rem;
+  outline: none;
+}
+
+.chart-legend input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 18%, #ffffff);
+}
+
+.chart-legend-static strong {
+  font-size: 0.82rem;
+  color: var(--main-text);
 }
 
 .org-tree-root,
@@ -515,6 +644,12 @@ body {
 }
 
 @media (max-width: 900px) {
+  .chart-legend {
+    width: min(96vw, 290px);
+    right: 0.6rem;
+    bottom: 0.6rem;
+  }
+
   .org-tree-root li {
     padding-inline: 0.45rem;
   }
@@ -548,11 +683,12 @@ body {
 
   .print-canvas {
     max-width: none !important;
-    width: fit-content;
+    width: 100% !important;
     margin: 0 !important;
   }
 
   .chart-surface {
+    width: 100%;
     border: 0;
     box-shadow: none;
     padding: 0;
@@ -561,6 +697,8 @@ body {
   }
 
   .chart-viewport {
+    flex: none;
+    width: 100%;
     max-height: none;
     overflow: visible;
     padding-bottom: 0;
@@ -590,6 +728,48 @@ body {
     width: fit-content;
     padding-bottom: 0;
     transform: none !important;
+  }
+
+  .chart-legend {
+    position: fixed;
+    right: 8mm;
+    bottom: 8mm;
+    margin: 0;
+    width: 74mm;
+    max-width: calc(100vw - 16mm);
+    border-radius: 0;
+    box-shadow: none;
+    border-color: #909090;
+    background: #ffffff;
+    padding: 2.2mm 2.5mm;
+    gap: 1.3mm;
+  }
+
+  .chart-legend h3 {
+    font-size: 8.2pt;
+    letter-spacing: 0.05em;
+  }
+
+  .chart-legend label,
+  .chart-legend-row {
+    grid-template-columns: 22mm minmax(0, 1fr);
+    gap: 1.6mm;
+  }
+
+  .chart-legend label span,
+  .chart-legend-row span {
+    font-size: 6.8pt;
+    color: #3f3f3f;
+  }
+
+  .chart-legend input {
+    border: 0;
+    border-bottom: 0.2mm solid #8a8a8a;
+    border-radius: 0;
+    padding: 0.2mm 0.1mm;
+    font-size: 8pt;
+    background: transparent;
+    box-shadow: none;
   }
 
   .node-card {

@@ -120,6 +120,13 @@ describe("org-chart unit", () => {
       name: "Original",
       themeId: "ocean",
       root: sampleTree(),
+      legend: {
+        title: "Original",
+        createdBy: "Alice",
+        revisedBy: "Bob",
+        date: "2026-01-01",
+        revisionNumber: "2",
+      },
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     };

@@ -1,4 +1,13 @@
-export type ThemeId = "ocean" | "forest" | "sunset" | "midnight";
+export type ThemeId =
+  | "ocean"
+  | "forest"
+  | "sunset"
+  | "midnight"
+  | "inp"
+  | "aurora"
+  | "graphite"
+  | "desert"
+  | "ruby";
 
 export interface OrgNode {
   id: string;
@@ -12,8 +21,17 @@ export interface OrgProject {
   name: string;
   themeId: ThemeId;
   root: OrgNode;
+  legend: ChartLegend;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ChartLegend {
+  title: string;
+  createdBy: string;
+  revisedBy: string;
+  date: string;
+  revisionNumber: string;
 }
 
 export const STORAGE_KEY = "org-chart-projects-v1";
@@ -27,6 +45,11 @@ export const THEMES: { id: ThemeId; name: string }[] = [
   { id: "forest", name: "Forest" },
   { id: "sunset", name: "Sunset" },
   { id: "midnight", name: "Midnight" },
+  { id: "inp", name: "INP" },
+  { id: "aurora", name: "Aurora" },
+  { id: "graphite", name: "Graphite" },
+  { id: "desert", name: "Desert" },
+  { id: "ruby", name: "Ruby" },
 ];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -58,6 +81,79 @@ export function nowISO(): string {
   return new Date().toISOString();
 }
 
+function isoDateFromTimestamp(value: string): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return "";
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+}
+
+function normalizeLegendDate(value: unknown, fallback: string): string {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return fallback;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return fallback;
+  }
+
+  return value;
+}
+
+export function createDefaultLegend(
+  projectName = "Org Chart",
+  createdAt = nowISO(),
+): ChartLegend {
+  return {
+    title: projectName,
+    createdBy: "",
+    revisedBy: "",
+    date: isoDateFromTimestamp(createdAt),
+    revisionNumber: "1",
+  };
+}
+
+function normalizeLegend(
+  input: unknown,
+  projectName: string,
+  createdAt: string,
+): ChartLegend {
+  if (!isRecord(input)) {
+    return createDefaultLegend(projectName, createdAt);
+  }
+
+  const fallbackLegend = createDefaultLegend(projectName, createdAt);
+
+  return {
+    title:
+      typeof input.title === "string" ? input.title : fallbackLegend.title,
+    createdBy:
+      typeof input.createdBy === "string"
+        ? input.createdBy
+        : fallbackLegend.createdBy,
+    revisedBy:
+      typeof input.revisedBy === "string"
+        ? input.revisedBy
+        : fallbackLegend.revisedBy,
+    date: normalizeLegendDate(input.date, fallbackLegend.date),
+    revisionNumber:
+      typeof input.revisionNumber === "string"
+        ? input.revisionNumber
+        : fallbackLegend.revisionNumber,
+  };
+}
+
 export function createNode(name = "New Member", title = "Role"): OrgNode {
   return {
     id: createId(),
@@ -75,6 +171,7 @@ export function createProject(name: string, root?: OrgNode): OrgProject {
     name,
     themeId: "ocean",
     root: root ?? createNode("CEO", "Top Leadership"),
+    legend: createDefaultLegend(name, timestamp),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -116,6 +213,10 @@ export function withFreshProjectIds(project: OrgProject): OrgProject {
     ...project,
     id: createId(),
     root: cloneSubtreeWithFreshIds(project.root),
+    legend: {
+      ...project.legend,
+      date: isoDateFromTimestamp(timestamp),
+    },
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -167,6 +268,7 @@ export function normalizeProject(input: unknown): OrgProject | null {
 
   const createdAt =
     typeof input.createdAt === "string" ? input.createdAt : nowISO();
+  const legend = normalizeLegend(input.legend, name, createdAt);
 
   return {
     id:
@@ -176,6 +278,7 @@ export function normalizeProject(input: unknown): OrgProject | null {
     name,
     themeId: normalizeThemeId(input.themeId),
     root: normalizedRoot,
+    legend,
     createdAt,
     updatedAt: nowISO(),
   };

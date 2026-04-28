@@ -47,6 +47,7 @@ import {
   sanitizeFileName,
   updateNode,
   withFreshProjectIds,
+  type ChartLegend,
   type OrgProject,
 } from "@/lib/org-chart";
 
@@ -70,7 +71,6 @@ interface DeleteProjectDialogState {
 
 const MM_TO_CSS_PX = 96 / 25.4;
 const PRINT_PAGE_WIDTH_MM = 297;
-const PRINT_PAGE_HEIGHT_MM = 210;
 const PRINT_PAGE_MARGIN_MM = 8;
 const MIN_PRINT_SCALE = 0.1;
 
@@ -188,40 +188,20 @@ export default function Home() {
 
   useEffect(() => {
     const applyPrintScale = () => {
-      const chartPrintArea = document.getElementById("chart-print-area");
       const chartContent = document.querySelector<HTMLElement>(
         "#chart-print-area .chart-content",
       );
 
-      if (!chartPrintArea || !chartContent) {
+      if (!chartContent) {
         return;
       }
 
-      const printHeaderBlock = chartPrintArea.querySelector<HTMLElement>(".print-only");
-
       const contentWidth = Math.max(chartContent.scrollWidth, chartContent.offsetWidth);
-      const contentHeight = Math.max(
-        chartContent.scrollHeight,
-        chartContent.offsetHeight,
-      );
-
       const printableWidthPx =
         (PRINT_PAGE_WIDTH_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
-      const printableHeightPx =
-        (PRINT_PAGE_HEIGHT_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
-
-      const headerHeightPx =
-        (printHeaderBlock?.offsetHeight ?? 0) + 8;
-
       const availableWidthPx = Math.max(120, printableWidthPx - 8);
-      const availableHeightPx = Math.max(
-        120,
-        printableHeightPx - headerHeightPx,
-      );
-
       const widthScale = availableWidthPx / Math.max(1, contentWidth);
-      const heightScale = availableHeightPx / Math.max(1, contentHeight);
-      const nextScale = Math.min(1, widthScale, heightScale);
+      const nextScale = widthScale;
 
       document.documentElement.style.setProperty(
         "--print-scale",
@@ -339,6 +319,19 @@ export default function Home() {
         ...node,
         [field]: value,
       })),
+    }));
+  };
+
+  const handleLegendFieldChange = (
+    field: keyof ChartLegend,
+    value: string,
+  ) => {
+    updateActiveProject((project) => ({
+      ...project,
+      legend: {
+        ...project.legend,
+        [field]: value,
+      },
     }));
   };
 
@@ -746,6 +739,7 @@ export default function Home() {
             onExportProject={handleExportProject}
             onPrint={handlePrint}
             onNodeFieldChange={handleNodeFieldChange}
+            onLegendFieldChange={handleLegendFieldChange}
             onOpenMenu={openContextMenu}
           />
         )}
