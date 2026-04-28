@@ -1,6 +1,12 @@
 "use client";
 
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { type OrgNode } from "@/lib/org-chart";
 
@@ -51,7 +57,8 @@ function measureTextWidthPx(
     return text.length * 8;
   }
 
-  span.style.fontFamily = '"Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif';
+  span.style.fontFamily =
+    '"Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif';
   span.style.fontWeight = fontWeight;
   span.style.fontSize = `${fontSizePx}px`;
   span.style.letterSpacing = `${letterSpacingEm}em`;
@@ -156,17 +163,8 @@ export function TreeNode({
     };
   }, [childListHorizontal, childSignature, node.children.length]);
 
-  const nameWidthPx = measureTextWidthPx(
-    headerRoleText,
-    "800",
-    16,
-    0.01,
-  );
-  const roleWidthPx = measureTextWidthPx(
-    bodyNameText,
-    "600",
-    14.72,
-  );
+  const nameWidthPx = measureTextWidthPx(headerRoleText, "800", 16, 0.01);
+  const roleWidthPx = measureTextWidthPx(bodyNameText, "600", 14.72);
 
   const headerHorizontalPaddingPx = 16 * 2;
   const bodyHorizontalPaddingPx = 14.08 * 2;
@@ -237,7 +235,9 @@ export function TreeNode({
       {node.children.length > 0 ? (
         <ul
           ref={childListHorizontal ? childListRef : undefined}
-          className={childListHorizontal ? "org-tree-horizontal-list" : undefined}
+          className={
+            childListHorizontal ? "org-tree-horizontal-list" : undefined
+          }
           style={childListStyle}
         >
           {node.children.map((child) => (
