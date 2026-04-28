@@ -148,8 +148,8 @@ export function ProjectEditor({
   const zoomPercent = Math.round(zoom * 100);
 
   return (
-    <section className="editor-workspace flex min-h-0 flex-1 flex-col">
-      <header className="editor-toolbar print-hidden border border-[--panel-border] bg-[--panel-bg] px-3 py-3 shadow-sm md:px-4 md:py-3">
+    <section className="flex min-h-0 flex-1 flex-col">
+      <header className="print-hidden border-b border-[--panel-border] bg-[--panel-bg] px-3 py-3 shadow-sm md:px-4 md:py-3">
         <div className="flex flex-wrap items-center gap-2.5 md:gap-3">
           <button
             type="button"
@@ -261,15 +261,12 @@ export function ProjectEditor({
             priority
           />
         </div>
-        <div className="mb-4 text-xs font-medium uppercase tracking-[0.14em] text-[--muted-text] p-4">
-          {nodeCount} nodes in this chart
-        </div>
         <div ref={chartViewportRef} className="chart-viewport">
           <div className="chart-print-scale">
             <div className="chart-zoom-frame" style={zoomFrameStyle}>
               <div
                 ref={chartContentRef}
-                className="chart-content min-w-max pb-4"
+                className="chart-content inline-block w-max pb-4"
                 style={zoomContentStyle}
               >
                 <ul className="org-tree-root">

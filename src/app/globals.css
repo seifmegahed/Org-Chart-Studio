@@ -340,6 +340,7 @@ body {
   padding: 0.84rem 1rem;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
+  border-bottom: 1px solid var(--line-color);
 }
 
 .node-person-icon {
@@ -528,7 +529,8 @@ body {
   html,
   body {
     margin: 0;
-    background: #ffffff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .print-hidden {
@@ -540,7 +542,6 @@ body {
   }
 
   .app-shell {
-    background: #ffffff;
     padding: 0 !important;
     min-height: 0;
   }
@@ -552,7 +553,6 @@ body {
   }
 
   .chart-surface {
-    background: #ffffff;
     border: 0;
     box-shadow: none;
     padding: 0;
@@ -569,7 +569,15 @@ body {
   .chart-print-scale {
     width: fit-content;
     transform-origin: top left;
-    transform: scale(var(--print-scale));
+    transform: none;
+    zoom: var(--print-scale);
+  }
+
+  @supports not (zoom: 1) {
+    .chart-print-scale {
+      transform: scale(var(--print-scale));
+      zoom: 1;
+    }
   }
 
   .chart-zoom-frame {
