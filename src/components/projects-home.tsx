@@ -1,6 +1,7 @@
 "use client";
 
 import { THEMES, formatDate, type OrgProject } from "@/lib/org-chart";
+import { Plus, Trash2, Upload } from "lucide-react";
 
 type ProjectsHomeProps = {
   projects: OrgProject[];
@@ -18,7 +19,7 @@ export function ProjectsHome({
   onDeleteProject,
 }: ProjectsHomeProps) {
   return (
-    <section className="rounded-2xl border border-[--panel-border] bg-[--panel-bg] p-5 shadow-xl md:p-8">
+    <section className="p-5 md:p-8">
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-[--muted-text]">
@@ -33,11 +34,11 @@ export function ProjectsHome({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="primary-btn" onClick={onCreateNewProject}>
-            New Project
+          <button className="primary-btn" onClick={onCreateNewProject} title="New Project" aria-label="New Project">
+            <Plus />
           </button>
-          <button className="secondary-btn" onClick={onImportClick}>
-            Import JSON
+          <button className="secondary-btn" onClick={onImportClick} title="Import" aria-label="Import">
+            <Upload />
           </button>
         </div>
       </div>
@@ -75,7 +76,7 @@ export function ProjectsHome({
                   className="secondary-btn"
                   onClick={() => onDeleteProject(project.id)}
                 >
-                  Delete
+                  <Trash2 />
                 </button>
               </div>
             </article>

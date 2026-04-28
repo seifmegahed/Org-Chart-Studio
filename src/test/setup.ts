@@ -28,6 +28,34 @@ function createStorageMock(): Storage {
 }
 
 if (typeof window !== "undefined") {
+  if (!window.HTMLElement.prototype.hasPointerCapture) {
+    Object.defineProperty(window.HTMLElement.prototype, "hasPointerCapture", {
+      value: () => false,
+      configurable: true,
+    });
+  }
+
+  if (!window.HTMLElement.prototype.setPointerCapture) {
+    Object.defineProperty(window.HTMLElement.prototype, "setPointerCapture", {
+      value: () => undefined,
+      configurable: true,
+    });
+  }
+
+  if (!window.HTMLElement.prototype.releasePointerCapture) {
+    Object.defineProperty(window.HTMLElement.prototype, "releasePointerCapture", {
+      value: () => undefined,
+      configurable: true,
+    });
+  }
+
+  if (!window.HTMLElement.prototype.scrollIntoView) {
+    Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", {
+      value: () => undefined,
+      configurable: true,
+    });
+  }
+
   const mockedStorage = createStorageMock();
 
   Object.defineProperty(window, "localStorage", {

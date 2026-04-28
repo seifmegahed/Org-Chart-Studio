@@ -8,8 +8,6 @@ import { LAST_PROJECT_KEY, STORAGE_KEY } from "@/lib/org-chart";
 describe("Home integration", () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.spyOn(window, "prompt").mockReturnValue("Acme Org");
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     vi.spyOn(window, "print").mockImplementation(() => undefined);
   });
 
@@ -24,14 +22,20 @@ describe("Home integration", () => {
     render(<Home />);
 
     await user.click(await screen.findByRole("button", { name: "New Project" }));
+    const projectNameInput = await screen.findByDisplayValue("Project 1");
+    await user.clear(projectNameInput);
+    await user.type(projectNameInput, "Acme Org");
+    await user.click(screen.getByRole("button", { name: "Create Project" }));
 
     expect(await screen.findByDisplayValue("Acme Org")).toBeInTheDocument();
-    expect(screen.getByText("1 nodes in this chart")).toBeInTheDocument();
+    expect(screen.getAllByRole("article")).toHaveLength(1);
 
     fireEvent.contextMenu(screen.getByRole("article"));
     await user.click(screen.getByRole("button", { name: "Add Node Beneath" }));
 
-    expect(await screen.findByText("2 nodes in this chart")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByRole("article")).toHaveLength(2);
+    });
   });
 
   it("restores the last active local project and allows theme switching", async () => {
@@ -61,7 +65,8 @@ describe("Home integration", () => {
     expect(await screen.findByDisplayValue("Stored Team")).toBeInTheDocument();
     expect(document.querySelector('main[data-theme="forest"]')).toBeTruthy();
 
-    await user.selectOptions(screen.getByRole("combobox"), "sunset");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: "Sunset" }));
 
     expect(document.querySelector('main[data-theme="sunset"]')).toBeTruthy();
   });
@@ -72,6 +77,7 @@ describe("Home integration", () => {
     render(<Home />);
 
     await user.click(await screen.findByRole("button", { name: "New Project" }));
+    await user.click(screen.getByRole("button", { name: "Create Project" }));
 
     fireEvent.contextMenu(screen.getAllByRole("article")[0]);
     await user.click(screen.getByRole("button", { name: "Add Node Beneath" }));
@@ -82,7 +88,9 @@ describe("Home integration", () => {
     fireEvent.contextMenu(screen.getAllByRole("article")[1]);
     await user.click(screen.getByRole("button", { name: "Add Node Beneath" }));
 
-    expect(await screen.findByText("4 nodes in this chart")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByRole("article")).toHaveLength(4);
+    });
 
     fireEvent.contextMenu(screen.getAllByRole("article")[2]);
     await user.click(screen.getByRole("button", { name: "Select New Parent" }));

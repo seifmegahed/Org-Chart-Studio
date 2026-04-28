@@ -1,11 +1,30 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { NodeContextMenu } from "@/components/node-context-menu";
 import { NoticeToast } from "@/components/notice-toast";
 import { ProjectEditor } from "@/components/project-editor";
 import { ProjectsHome } from "@/components/projects-home";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   EXPORT_VERSION,
   LAST_PROJECT_KEY,
@@ -38,6 +57,23 @@ interface ContextMenuState {
   depth: number;
 }
 
+interface DeleteNodeDialogState {
+  nodeId: string;
+  nodeName: string;
+  childCount: number;
+}
+
+interface DeleteProjectDialogState {
+  projectId: string;
+  projectName: string;
+}
+
+const MM_TO_CSS_PX = 96 / 25.4;
+const PRINT_PAGE_WIDTH_MM = 297;
+const PRINT_PAGE_HEIGHT_MM = 210;
+const PRINT_PAGE_MARGIN_MM = 8;
+const MIN_PRINT_SCALE = 0.1;
+
 export default function Home() {
   const [ready, setReady] = useState(false);
   const [projects, setProjects] = useState<OrgProject[]>([]);
@@ -47,6 +83,15 @@ export default function Home() {
     null,
   );
   const [notice, setNotice] = useState("");
+  const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false);
+  const [createProjectSuggestedName, setCreateProjectSuggestedName] = useState(
+    "Project 1",
+  );
+  const [createProjectName, setCreateProjectName] = useState("");
+  const [deleteNodeDialog, setDeleteNodeDialog] =
+    useState<DeleteNodeDialogState | null>(null);
+  const [deleteProjectDialog, setDeleteProjectDialog] =
+    useState<DeleteProjectDialogState | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const activeProject = useMemo(
@@ -55,6 +100,15 @@ export default function Home() {
   );
 
   const activeTheme = activeProject?.themeId ?? "ocean";
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document.body.setAttribute("data-theme", activeTheme);
+    document.documentElement.setAttribute("data-theme", activeTheme);
+  }, [activeTheme]);
 
   useEffect(() => {
     const loadedProjects = loadProjectsFromStorage();
@@ -134,23 +188,44 @@ export default function Home() {
 
   useEffect(() => {
     const applyPrintScale = () => {
+      const chartPrintArea = document.getElementById("chart-print-area");
       const chartContent = document.querySelector<HTMLElement>(
         "#chart-print-area .chart-content",
       );
 
-      if (!chartContent) {
+      if (!chartPrintArea || !chartContent) {
         return;
       }
 
-      const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-      const horizontalPrintMarginPx = 48;
-      const availableWidth = Math.max(320, viewportWidth - horizontalPrintMarginPx);
+      const printHeaderBlock = chartPrintArea.querySelector<HTMLElement>(".print-only");
+
       const contentWidth = Math.max(chartContent.scrollWidth, chartContent.offsetWidth);
-      const nextScale = Math.min(1, availableWidth / contentWidth);
+      const contentHeight = Math.max(
+        chartContent.scrollHeight,
+        chartContent.offsetHeight,
+      );
+
+      const printableWidthPx =
+        (PRINT_PAGE_WIDTH_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
+      const printableHeightPx =
+        (PRINT_PAGE_HEIGHT_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
+
+      const headerHeightPx =
+        (printHeaderBlock?.offsetHeight ?? 0) + 8;
+
+      const availableWidthPx = Math.max(120, printableWidthPx - 8);
+      const availableHeightPx = Math.max(
+        120,
+        printableHeightPx - headerHeightPx,
+      );
+
+      const widthScale = availableWidthPx / Math.max(1, contentWidth);
+      const heightScale = availableHeightPx / Math.max(1, contentHeight);
+      const nextScale = Math.min(1, widthScale, heightScale);
 
       document.documentElement.style.setProperty(
         "--print-scale",
-        `${Math.max(0.55, nextScale)}`,
+        `${Math.max(MIN_PRINT_SCALE, nextScale)}`,
       );
     };
 
@@ -158,12 +233,32 @@ export default function Home() {
       document.documentElement.style.removeProperty("--print-scale");
     };
 
-    window.addEventListener("beforeprint", applyPrintScale);
+    const handleBeforePrint = () => {
+      applyPrintScale();
+      window.requestAnimationFrame(applyPrintScale);
+    };
+
+    const printMediaQuery =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("print")
+        : null;
+    const handlePrintMediaChange = (event: MediaQueryListEvent) => {
+      if (event.matches) {
+        window.requestAnimationFrame(applyPrintScale);
+        return;
+      }
+
+      clearPrintScale();
+    };
+
+    window.addEventListener("beforeprint", handleBeforePrint);
     window.addEventListener("afterprint", clearPrintScale);
+    printMediaQuery?.addEventListener("change", handlePrintMediaChange);
 
     return () => {
-      window.removeEventListener("beforeprint", applyPrintScale);
+      window.removeEventListener("beforeprint", handleBeforePrint);
       window.removeEventListener("afterprint", clearPrintScale);
+      printMediaQuery?.removeEventListener("change", handlePrintMediaChange);
     };
   }, []);
 
@@ -206,17 +301,20 @@ export default function Home() {
 
   const createNewProject = () => {
     const suggestedName = `Project ${projects.length + 1}`;
-    const requestedName = window.prompt("Project name", suggestedName);
+    setCreateProjectSuggestedName(suggestedName);
+    setCreateProjectName(suggestedName);
+    setCreateProjectDialogOpen(true);
+  };
 
-    if (requestedName === null) {
-      return;
-    }
-
-    const safeName = requestedName.trim() || suggestedName;
+  const handleCreateProject = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const safeName = createProjectName.trim() || createProjectSuggestedName;
     const project = createProject(safeName);
 
     setProjects((currentProjects) => [project, ...currentProjects]);
     setActiveProjectId(project.id);
+    setCreateProjectDialogOpen(false);
+    setCreateProjectName("");
     setNotice(`Created ${safeName}.`);
   };
 
@@ -283,8 +381,16 @@ export default function Home() {
       return;
     }
 
-    const confirmed = window.confirm("Delete this node and all sub-nodes?");
-    if (!confirmed) {
+    const targetNode = findNodeById(activeProject.root, nodeId);
+    const hasChildren = Boolean(targetNode?.children.length);
+
+    if (hasChildren) {
+      setDeleteNodeDialog({
+        nodeId,
+        nodeName: targetNode?.name ?? "this node",
+        childCount: targetNode?.children.length ?? 0,
+      });
+      setContextMenu(null);
       return;
     }
 
@@ -492,6 +598,20 @@ export default function Home() {
     window.print();
   };
 
+  const confirmDeleteNode = () => {
+    if (!activeProject || !deleteNodeDialog) {
+      setDeleteNodeDialog(null);
+      return;
+    }
+
+    updateActiveProject((project) => ({
+      ...project,
+      root: deleteNode(project.root, deleteNodeDialog.nodeId),
+    }));
+
+    setDeleteNodeDialog(null);
+  };
+
   const handleDeleteProject = (projectId: string) => {
     const project = projects.find((candidate) => candidate.id === projectId);
 
@@ -499,11 +619,18 @@ export default function Home() {
       return;
     }
 
-    const confirmed = window.confirm(`Delete project \"${project.name}\"?`);
-    if (!confirmed) {
+    setDeleteProjectDialog({
+      projectId,
+      projectName: project.name,
+    });
+  };
+
+  const confirmDeleteProject = () => {
+    if (!deleteProjectDialog) {
       return;
     }
 
+    const { projectId, projectName } = deleteProjectDialog;
     setProjects((currentProjects) =>
       currentProjects.filter((candidate) => candidate.id !== projectId),
     );
@@ -512,7 +639,8 @@ export default function Home() {
       setActiveProjectId(null);
     }
 
-    setNotice(`Deleted ${project.name}.`);
+    setDeleteProjectDialog(null);
+    setNotice(`Deleted ${projectName}.`);
   };
 
   if (!ready) {
@@ -567,7 +695,7 @@ export default function Home() {
       data-theme={activeTheme}
       className={
         isEditingProject
-          ? "app-shell h-screen min-h-screen overflow-hidden"
+          ? "h-screen min-h-screen overflow-hidden"
           : "app-shell min-h-screen"
       }
     >
@@ -623,7 +751,7 @@ export default function Home() {
         )}
 
         {activeProject && reparentSourceNode ? (
-          <div className="print-hidden mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-[var(--panel-border)] bg-white/90 px-4 py-2 text-sm text-[var(--main-text)]">
+          <div className="print-hidden mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-[--panel-border] bg-white/90 px-4 py-2 text-sm text-[--main-text]">
             <span>
               Select a new parent for <strong>{reparentSourceNode.name}</strong>.
             </span>
@@ -635,15 +763,112 @@ export default function Home() {
             </button>
           </div>
         ) : null}
-
-        {/* {activeProject ? (
-          <div className="print-hidden bg-white/80 px-4 py-2 text-xs font-medium text-[var(--muted-text)]">
-            Right-click nodes to add, rearrange, duplicate, delete, or reparent.
-          </div>
-        ) : null} */}
-
         <NoticeToast message={notice} />
       </div>
+
+      <Dialog
+        open={createProjectDialogOpen}
+        onOpenChange={(open) => {
+          setCreateProjectDialogOpen(open);
+          if (!open) {
+            setCreateProjectName("");
+          }
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={handleCreateProject}>
+            <DialogHeader>
+              <DialogTitle>Create Project</DialogTitle>
+              <DialogDescription>
+                Pick a project name. You can rename it later.
+              </DialogDescription>
+            </DialogHeader>
+            <input
+              className="mt-4 w-full rounded-lg border border-[--panel-border] px-3 py-2 text-sm font-semibold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
+              value={createProjectName}
+              onChange={(event) => {
+                setCreateProjectName(event.target.value);
+              }}
+              placeholder={createProjectSuggestedName}
+              autoFocus
+            />
+            <DialogFooter className="sticky bottom-0 mt-4 pt-3">
+              <DialogClose asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-[--panel-border] bg-white px-4 text-sm font-semibold text-[--main-text] transition-colors hover:bg-[--button-muted] cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </DialogClose>
+              <button
+                type="submit"
+                className="primary-btn min-w-30"
+              >
+                Create Project
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deleteNodeDialog)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteNodeDialog(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete node and descendants?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteNodeDialog
+                ? `Delete ${deleteNodeDialog.nodeName} and ${deleteNodeDialog.childCount} descendant node(s)? This action cannot be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#b73333] hover:bg-[#a22a2a] cursor-pointer"
+              onClick={confirmDeleteNode}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(deleteProjectDialog)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteProjectDialog(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteProjectDialog
+                ? `Delete ${deleteProjectDialog.projectName}? This action cannot be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-[#b73333] hover:bg-[#a22a2a] cursor-pointer"
+              onClick={confirmDeleteProject}
+            >
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {contextMenu && activeProject ? (
         <NodeContextMenu
