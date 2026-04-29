@@ -119,6 +119,7 @@ describe("org-chart unit", () => {
       id: "project-1",
       name: "Original",
       themeId: "ocean",
+      spreadTillLevel: 3,
       root: sampleTree(),
       legend: {
         title: "Original",

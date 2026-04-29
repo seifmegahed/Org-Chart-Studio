@@ -13,6 +13,7 @@ import { type OrgNode } from "@/lib/org-chart";
 type TreeNodeProps = {
   node: OrgNode;
   depth: number;
+  spreadTillLevel: number;
   onNodeFieldChange: (
     nodeId: string,
     field: "name" | "title",
@@ -22,6 +23,7 @@ type TreeNodeProps = {
 };
 
 let measurementElement: HTMLSpanElement | null | undefined;
+const MEMBER_NAME_MAX_LENGTH = 30;
 
 function getMeasurementElement(): HTMLSpanElement | null {
   if (measurementElement !== undefined) {
@@ -67,21 +69,38 @@ function measureTextWidthPx(
   return span.getBoundingClientRect().width;
 }
 
+function splitMemberLines(value: string): string[] {
+  const lines = value
+    .split("\n")
+    .map((line) => line.slice(0, MEMBER_NAME_MAX_LENGTH));
+
+  return lines.length > 0 ? lines : [""];
+}
+
 export function TreeNode({
   node,
   depth,
+  spreadTillLevel,
   onNodeFieldChange,
   onOpenMenu,
 }: TreeNodeProps) {
   const headerRoleText = node.title.trim() || "Role";
-  const bodyNameText = node.name.trim() || "New Member";
-  const isHorizontalNode = depth > 3;
-  const childListHorizontal = depth >= 3;
+  const memberLines = useMemo(() => splitMemberLines(node.name), [node.name]);
+  const bodyNameText =
+    memberLines.reduce(
+      (longestLine, line) =>
+        line.length > longestLine.length ? line : longestLine,
+      "",
+    ) || "New Member";
+  const isHorizontalNode = depth > spreadTillLevel;
+  const childListHorizontal = depth >= spreadTillLevel;
   const nodeItemClassName = isHorizontalNode
     ? "org-tree-horizontal-node"
     : "org-tree-centered-node";
   const horizontalIndentRem = 1.45;
   const childListRef = useRef<HTMLUListElement | null>(null);
+  const memberInputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const pendingFocusRowIndexRef = useRef<number | null>(null);
   const [childrenLastMidPx, setChildrenLastMidPx] = useState(0);
   const childSignature = useMemo(
     () => node.children.map((child) => child.id).join("|"),
@@ -163,6 +182,17 @@ export function TreeNode({
     };
   }, [childListHorizontal, childSignature, node.children.length]);
 
+  useEffect(() => {
+    const pendingFocusRowIndex = pendingFocusRowIndexRef.current;
+    if (pendingFocusRowIndex === null) {
+      return;
+    }
+
+    const targetInput = memberInputRefs.current[pendingFocusRowIndex];
+    targetInput?.focus();
+    pendingFocusRowIndexRef.current = null;
+  }, [memberLines]);
+
   const nameWidthPx = measureTextWidthPx(headerRoleText, "800", 16, 0.01);
   const roleWidthPx = measureTextWidthPx(bodyNameText, "600", 14.72);
 
@@ -194,8 +224,26 @@ export function TreeNode({
       } as CSSProperties)
     : undefined;
 
+  const updateMemberLine = (lineIndex: number, value: string) => {
+    const nextLines = [...memberLines];
+    nextLines[lineIndex] = value.slice(0, MEMBER_NAME_MAX_LENGTH);
+    onNodeFieldChange(node.id, "name", nextLines.join("\n"));
+  };
+
+  const insertMemberLineBelow = (lineIndex: number) => {
+    const nextLines = [...memberLines];
+    nextLines.splice(lineIndex + 1, 0, "");
+    onNodeFieldChange(node.id, "name", nextLines.join("\n"));
+    pendingFocusRowIndexRef.current = lineIndex + 1;
+  };
+
   return (
-    <li className={nodeItemClassName} style={nodeListItemStyle}>
+    <li
+      className={nodeItemClassName}
+      style={nodeListItemStyle}
+      data-node-id={node.id}
+      data-node-depth={depth}
+    >
       <article
         className="node-card"
         style={nodeCardStyle}
@@ -204,31 +252,62 @@ export function TreeNode({
           onOpenMenu(node.id, event.clientX, event.clientY, depth);
         }}
       >
+        <button
+          type="button"
+          className="node-menu-trigger print-hidden"
+          aria-label="Open node menu"
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const anchorRect = event.currentTarget.getBoundingClientRect();
+            onOpenMenu(node.id, anchorRect.left, anchorRect.bottom + 6, depth);
+          }}
+        >
+          <span aria-hidden="true">⋮</span>
+        </button>
         <div className="node-header">
           <input
             value={node.title}
             onChange={(event) =>
-              onNodeFieldChange(node.id, "title", event.target.value)
+              onNodeFieldChange(node.id, "title", event.target.value.slice(0, 20))
             }
             className="node-role-input"
             placeholder="Role"
+            maxLength={20}
           />
         </div>
 
         <div className="node-body">
-          <span className="node-person-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" role="presentation">
-              <path d="M12 12.25a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.25Zm0 1.5c-4.29 0-7.75 2.43-7.75 5.43a.82.82 0 0 0 .82.82h13.86a.82.82 0 0 0 .82-.82c0-3-3.46-5.43-7.75-5.43Z" />
-            </svg>
-          </span>
-          <input
-            value={node.name}
-            onChange={(event) =>
-              onNodeFieldChange(node.id, "name", event.target.value)
-            }
-            className="node-name-input"
-            placeholder="New Member"
-          />
+          {memberLines.map((memberLine, lineIndex) => (
+            <div
+              key={`${node.id}-member-${lineIndex}`}
+              className="node-person-row"
+            >
+              <span className="node-person-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" role="presentation">
+                  <path d="M12 12.25a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.25Zm0 1.5c-4.29 0-7.75 2.43-7.75 5.43a.82.82 0 0 0 .82.82h13.86a.82.82 0 0 0 .82-.82c0-3-3.46-5.43-7.75-5.43Z" />
+                </svg>
+              </span>
+              <input
+                ref={(element) => {
+                  memberInputRefs.current[lineIndex] = element;
+                }}
+                value={memberLine}
+                onChange={(event) => {
+                  updateMemberLine(lineIndex, event.target.value);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && event.shiftKey) {
+                    event.preventDefault();
+                    insertMemberLineBelow(lineIndex);
+                  }
+                }}
+                className="node-name-input"
+                placeholder={lineIndex === 0 ? "New Member" : "Member"}
+                maxLength={MEMBER_NAME_MAX_LENGTH}
+              />
+            </div>
+          ))}
         </div>
       </article>
 
@@ -245,6 +324,7 @@ export function TreeNode({
               key={child.id}
               node={child}
               depth={depth + 1}
+              spreadTillLevel={spreadTillLevel}
               onNodeFieldChange={onNodeFieldChange}
               onOpenMenu={onOpenMenu}
             />

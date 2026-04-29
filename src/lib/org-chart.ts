@@ -20,6 +20,7 @@ export interface OrgProject {
   id: string;
   name: string;
   themeId: ThemeId;
+  spreadTillLevel: number;
   root: OrgNode;
   legend: ChartLegend;
   createdAt: string;
@@ -39,6 +40,9 @@ export const LAST_PROJECT_KEY = "org-chart-last-project-v1";
 export const EXPORT_VERSION = 1;
 export const MENU_WIDTH = 196;
 export const MENU_HEIGHT = 356;
+export const MIN_SPREAD_TILL_LEVEL = 2;
+export const MAX_SPREAD_TILL_LEVEL = 8;
+export const DEFAULT_SPREAD_TILL_LEVEL = 3;
 
 export const THEMES: { id: ThemeId; name: string }[] = [
   { id: "ocean", name: "Ocean" },
@@ -170,11 +174,28 @@ export function createProject(name: string, root?: OrgNode): OrgProject {
     id: createId(),
     name,
     themeId: "ocean",
+    spreadTillLevel: DEFAULT_SPREAD_TILL_LEVEL,
     root: root ?? createNode("CEO", "Top Leadership"),
     legend: createDefaultLegend(name, timestamp),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+}
+
+export function clampSpreadTillLevel(value: unknown): number {
+  const numeric =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseInt(value, 10)
+        : Number.NaN;
+
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_SPREAD_TILL_LEVEL;
+  }
+
+  const rounded = Math.round(numeric);
+  return Math.min(MAX_SPREAD_TILL_LEVEL, Math.max(MIN_SPREAD_TILL_LEVEL, rounded));
 }
 
 export function normalizeThemeId(value: unknown): ThemeId {
@@ -277,6 +298,7 @@ export function normalizeProject(input: unknown): OrgProject | null {
         : createId(),
     name,
     themeId: normalizeThemeId(input.themeId),
+    spreadTillLevel: clampSpreadTillLevel(input.spreadTillLevel),
     root: normalizedRoot,
     legend,
     createdAt,

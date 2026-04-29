@@ -30,6 +30,7 @@ import {
   LAST_PROJECT_KEY,
   STORAGE_KEY,
   addChildNode,
+  clampSpreadTillLevel,
   clampMenuPosition,
   countNodes,
   createProject,
@@ -71,8 +72,39 @@ interface DeleteProjectDialogState {
 
 const MM_TO_CSS_PX = 96 / 25.4;
 const PRINT_PAGE_WIDTH_MM = 297;
+const PRINT_PAGE_HEIGHT_MM = 210;
 const PRINT_PAGE_MARGIN_MM = 8;
 const MIN_PRINT_SCALE = 0.1;
+const PRINT_CHART_VERTICAL_RESERVED_PX = 96;
+
+function measureChartPrintScale(chartContent: HTMLElement): number {
+  const contentWidth = Math.max(chartContent.scrollWidth, chartContent.offsetWidth);
+  const contentHeight = Math.max(
+    chartContent.scrollHeight,
+    chartContent.offsetHeight,
+  );
+
+  const printableWidthPx =
+    (PRINT_PAGE_WIDTH_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
+  const printableHeightPx =
+    (PRINT_PAGE_HEIGHT_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
+
+  const availableWidthPx = Math.max(120, printableWidthPx - 8);
+  const availableHeightPx = Math.max(
+    120,
+    printableHeightPx - PRINT_CHART_VERTICAL_RESERVED_PX,
+  );
+
+  const widthScale = availableWidthPx / Math.max(1, contentWidth);
+  const heightScale = availableHeightPx / Math.max(1, contentHeight);
+  const fitScale = Math.min(widthScale, heightScale, 1);
+
+  if (!Number.isFinite(fitScale)) {
+    return 1;
+  }
+
+  return Math.max(MIN_PRINT_SCALE, fitScale);
+}
 
 export default function Home() {
   const [ready, setReady] = useState(false);
@@ -196,16 +228,9 @@ export default function Home() {
         return;
       }
 
-      const contentWidth = Math.max(chartContent.scrollWidth, chartContent.offsetWidth);
-      const printableWidthPx =
-        (PRINT_PAGE_WIDTH_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
-      const availableWidthPx = Math.max(120, printableWidthPx - 8);
-      const widthScale = availableWidthPx / Math.max(1, contentWidth);
-      const nextScale = widthScale;
-
       document.documentElement.style.setProperty(
         "--print-scale",
-        `${Math.max(MIN_PRINT_SCALE, nextScale)}`,
+        `${measureChartPrintScale(chartContent)}`,
       );
     };
 
@@ -668,7 +693,9 @@ export default function Home() {
     activeProject && contextMenu
       ? findNodeDepth(activeProject.root, contextMenu.nodeId) ?? contextMenu.depth
       : null;
-  const useHorizontalMoveLabels = contextNodeDepth !== null ? contextNodeDepth <= 3 : true;
+  const spreadThreshold = activeProject?.spreadTillLevel ?? 3;
+  const useHorizontalMoveLabels =
+    contextNodeDepth !== null ? contextNodeDepth <= spreadThreshold : true;
   const moveBackwardLabel = useHorizontalMoveLabels ? "Move Left" : "Move Up";
   const moveForwardLabel = useHorizontalMoveLabels ? "Move Right" : "Move Down";
   const canMoveBackward =
@@ -733,6 +760,12 @@ export default function Home() {
               updateActiveProject((project) => ({
                 ...project,
                 themeId: normalizeThemeId(nextTheme),
+              }));
+            }}
+            onSpreadTillLevelChange={(nextLevel) => {
+              updateActiveProject((project) => ({
+                ...project,
+                spreadTillLevel: clampSpreadTillLevel(nextLevel),
               }));
             }}
             onImportClick={handleImportClick}
