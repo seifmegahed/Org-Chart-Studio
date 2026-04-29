@@ -1,11 +1,21 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
+import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { NodeContextMenu } from "@/components/node-context-menu";
 import { NoticeToast } from "@/components/notice-toast";
 import { ProjectEditor } from "@/components/project-editor";
 import { ProjectsHome } from "@/components/projects-home";
+import { PrintSetupDialog } from "@/components/print-setup-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,15 +26,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   EXPORT_VERSION,
   LAST_PROJECT_KEY,
@@ -51,6 +52,14 @@ import {
   type ChartLegend,
   type OrgProject,
 } from "@/lib/org-chart";
+import {
+  DEFAULT_PRINT_SETTINGS,
+  buildPrintPageRule,
+  computePrintLayout,
+  measureChartDimensions,
+  type ChartDimensions,
+  type PrintSettings,
+} from "@/lib/print-layout";
 
 interface ContextMenuState {
   nodeId: string;
@@ -70,41 +79,7 @@ interface DeleteProjectDialogState {
   projectName: string;
 }
 
-const MM_TO_CSS_PX = 96 / 25.4;
-const PRINT_PAGE_WIDTH_MM = 297;
-const PRINT_PAGE_HEIGHT_MM = 210;
-const PRINT_PAGE_MARGIN_MM = 8;
-const MIN_PRINT_SCALE = 0.1;
-const PRINT_CHART_VERTICAL_RESERVED_PX = 96;
-
-function measureChartPrintScale(chartContent: HTMLElement): number {
-  const contentWidth = Math.max(chartContent.scrollWidth, chartContent.offsetWidth);
-  const contentHeight = Math.max(
-    chartContent.scrollHeight,
-    chartContent.offsetHeight,
-  );
-
-  const printableWidthPx =
-    (PRINT_PAGE_WIDTH_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
-  const printableHeightPx =
-    (PRINT_PAGE_HEIGHT_MM - PRINT_PAGE_MARGIN_MM * 2) * MM_TO_CSS_PX;
-
-  const availableWidthPx = Math.max(120, printableWidthPx - 8);
-  const availableHeightPx = Math.max(
-    120,
-    printableHeightPx - PRINT_CHART_VERTICAL_RESERVED_PX,
-  );
-
-  const widthScale = availableWidthPx / Math.max(1, contentWidth);
-  const heightScale = availableHeightPx / Math.max(1, contentHeight);
-  const fitScale = Math.min(widthScale, heightScale, 1);
-
-  if (!Number.isFinite(fitScale)) {
-    return 1;
-  }
-
-  return Math.max(MIN_PRINT_SCALE, fitScale);
-}
+const PRINT_PAGE_RULE_STYLE_ID = "org-chart-print-page-rule";
 
 export default function Home() {
   const [ready, setReady] = useState(false);
@@ -124,7 +99,15 @@ export default function Home() {
     useState<DeleteNodeDialogState | null>(null);
   const [deleteProjectDialog, setDeleteProjectDialog] =
     useState<DeleteProjectDialogState | null>(null);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printSettings, setPrintSettings] = useState<PrintSettings>(
+    DEFAULT_PRINT_SETTINGS,
+  );
+  const [chartDimensions, setChartDimensions] = useState<ChartDimensions | null>(
+    null,
+  );
   const importInputRef = useRef<HTMLInputElement>(null);
+  const pendingPrintRef = useRef(false);
 
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? null,
@@ -218,29 +201,76 @@ export default function Home() {
     };
   }, [notice]);
 
-  useEffect(() => {
-    const applyPrintScale = () => {
-      const chartContent = document.querySelector<HTMLElement>(
-        "#chart-print-area .chart-content",
-      );
+  const readChartDimensions = useCallback((): ChartDimensions | null => {
+    const chartContent = document.querySelector<HTMLElement>(
+      "#chart-print-area .chart-content",
+    );
+    if (!chartContent) {
+      return null;
+    }
 
-      if (!chartContent) {
+    return measureChartDimensions(chartContent);
+  }, []);
+
+  const applyPrintPageRule = useCallback((settings: PrintSettings) => {
+    const styleElementId = PRINT_PAGE_RULE_STYLE_ID;
+    let styleElement = document.getElementById(styleElementId);
+    if (!(styleElement instanceof HTMLStyleElement)) {
+      styleElement = document.createElement("style");
+      styleElement.id = styleElementId;
+      document.head.appendChild(styleElement);
+    }
+
+    styleElement.textContent = buildPrintPageRule(settings);
+  }, []);
+
+  const clearPrintPageRule = useCallback(() => {
+    const styleElement = document.getElementById(PRINT_PAGE_RULE_STYLE_ID);
+    styleElement?.remove();
+  }, []);
+
+  const applyPrintSettings = useCallback(
+    (settings: PrintSettings) => {
+      const measuredDimensions = readChartDimensions();
+      if (!measuredDimensions) {
         return;
       }
 
+      setChartDimensions(measuredDimensions);
+      const printLayout = computePrintLayout(measuredDimensions, settings);
       document.documentElement.style.setProperty(
         "--print-scale",
-        `${measureChartPrintScale(chartContent)}`,
+        `${printLayout.scale}`,
       );
+      document.documentElement.style.setProperty(
+        "--print-offset-x",
+        `${printLayout.offsetX}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--print-offset-y",
+        `${printLayout.offsetY}px`,
+      );
+      applyPrintPageRule(settings);
+    },
+    [applyPrintPageRule, readChartDimensions],
+  );
+
+  useEffect(() => {
+    const syncPrintSettings = () => {
+      applyPrintSettings(printSettings);
     };
 
-    const clearPrintScale = () => {
+    const clearPrintSettings = () => {
       document.documentElement.style.removeProperty("--print-scale");
+      document.documentElement.style.removeProperty("--print-offset-x");
+      document.documentElement.style.removeProperty("--print-offset-y");
+      clearPrintPageRule();
+      pendingPrintRef.current = false;
     };
 
     const handleBeforePrint = () => {
-      applyPrintScale();
-      window.requestAnimationFrame(applyPrintScale);
+      syncPrintSettings();
+      window.requestAnimationFrame(syncPrintSettings);
     };
 
     const printMediaQuery =
@@ -249,23 +279,23 @@ export default function Home() {
         : null;
     const handlePrintMediaChange = (event: MediaQueryListEvent) => {
       if (event.matches) {
-        window.requestAnimationFrame(applyPrintScale);
+        window.requestAnimationFrame(syncPrintSettings);
         return;
       }
 
-      clearPrintScale();
+      clearPrintSettings();
     };
 
     window.addEventListener("beforeprint", handleBeforePrint);
-    window.addEventListener("afterprint", clearPrintScale);
+    window.addEventListener("afterprint", clearPrintSettings);
     printMediaQuery?.addEventListener("change", handlePrintMediaChange);
 
     return () => {
       window.removeEventListener("beforeprint", handleBeforePrint);
-      window.removeEventListener("afterprint", clearPrintScale);
+      window.removeEventListener("afterprint", clearPrintSettings);
       printMediaQuery?.removeEventListener("change", handlePrintMediaChange);
     };
-  }, []);
+  }, [applyPrintSettings, clearPrintPageRule, printSettings]);
 
   useEffect(() => {
     if (!activeProject || !reparentSourceNodeId) {
@@ -611,9 +641,19 @@ export default function Home() {
     }
   };
 
-  const handlePrint = () => {
+  const handleOpenPrintDialog = () => {
     setContextMenu(null);
-    window.print();
+    setChartDimensions(readChartDimensions());
+    setPrintDialogOpen(true);
+  };
+
+  const handleConfirmPrint = () => {
+    applyPrintSettings(printSettings);
+    pendingPrintRef.current = true;
+    setPrintDialogOpen(false);
+    window.requestAnimationFrame(() => {
+      window.print();
+    });
   };
 
   const confirmDeleteNode = () => {
@@ -770,7 +810,7 @@ export default function Home() {
             }}
             onImportClick={handleImportClick}
             onExportProject={handleExportProject}
-            onPrint={handlePrint}
+            onPrint={handleOpenPrintDialog}
             onNodeFieldChange={handleNodeFieldChange}
             onLegendFieldChange={handleLegendFieldChange}
             onOpenMenu={openContextMenu}
@@ -793,51 +833,33 @@ export default function Home() {
         <NoticeToast message={notice} />
       </div>
 
-      <Dialog
+      <CreateProjectDialog
         open={createProjectDialogOpen}
+        projectName={createProjectName}
+        suggestedName={createProjectSuggestedName}
         onOpenChange={(open) => {
           setCreateProjectDialogOpen(open);
           if (!open) {
             setCreateProjectName("");
           }
         }}
-      >
-        <DialogContent>
-          <form onSubmit={handleCreateProject}>
-            <DialogHeader>
-              <DialogTitle>Create Project</DialogTitle>
-              <DialogDescription>
-                Pick a project name. You can rename it later.
-              </DialogDescription>
-            </DialogHeader>
-            <input
-              className="mt-4 w-full rounded-lg border border-[--panel-border] px-3 py-2 text-sm font-semibold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
-              value={createProjectName}
-              onChange={(event) => {
-                setCreateProjectName(event.target.value);
-              }}
-              placeholder={createProjectSuggestedName}
-              autoFocus
-            />
-            <DialogFooter className="sticky bottom-0 mt-4 pt-3">
-              <DialogClose asChild>
-                <button
-                  type="button"
-                  className="inline-flex h-10 items-center justify-center rounded-lg border border-[--panel-border] bg-white px-4 text-sm font-semibold text-[--main-text] transition-colors hover:bg-[--button-muted] cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </DialogClose>
-              <button
-                type="submit"
-                className="primary-btn min-w-30"
-              >
-                Create Project
-              </button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+        onProjectNameChange={setCreateProjectName}
+        onSubmit={handleCreateProject}
+      />
+
+      <PrintSetupDialog
+        open={printDialogOpen}
+        settings={printSettings}
+        chartDimensions={chartDimensions}
+        onOpenChange={(open) => {
+          setPrintDialogOpen(open);
+          if (open) {
+            setChartDimensions(readChartDimensions());
+          }
+        }}
+        onSettingsChange={setPrintSettings}
+        onConfirmPrint={handleConfirmPrint}
+      />
 
       <AlertDialog
         open={Boolean(deleteNodeDialog)}
