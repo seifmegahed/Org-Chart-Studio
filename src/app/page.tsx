@@ -959,7 +959,7 @@ export default function Home() {
           onDelete={handleDeleteNode}
         />
       ) : null}
-      <div className="print-onlyE pointer-events-none fixed bottom-2 left-1/2 z-50 -translate-x-1/2 px-3 text-center text-xs font-medium text-[--muted-text]">
+      <div className="print-only pointer-events-none fixed bottom-2 left-1/2 z-50 -translate-x-1/2 px-3 text-center text-xs font-medium text-[--muted-text]">
         created by INP Organization Chart Studio - inp-org-chart-studio.vercel.app
       </div>
     </main>
