@@ -204,6 +204,50 @@ body {
   height: fit-content;
 }
 
+.chart-content {
+  position: relative;
+}
+
+.chart-connector-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.chart-print-node-layer {
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: visible;
+}
+
+.chart-content--svg-connectors .org-tree-root {
+  position: relative;
+  z-index: 3;
+}
+
+.chart-content--svg-connectors .org-tree-root ul::before,
+.chart-content--svg-connectors .org-tree-root li::before,
+.chart-content--svg-connectors .org-tree-root li::after,
+.chart-content--svg-connectors
+  .org-tree-root
+  li.org-tree-centered-node
+  > ul.org-tree-horizontal-list::before,
+.chart-content--svg-connectors
+  .org-tree-root
+  li.org-tree-horizontal-node
+  > ul.org-tree-horizontal-list::before,
+.chart-content--svg-connectors
+  .org-tree-root
+  li.org-tree-horizontal-node
+  > .node-card::before {
+  display: none !important;
+}
+
 .chart-legend {
   position: fixed;
   right: 1rem;
@@ -472,6 +516,29 @@ body {
   border-bottom: 1px solid var(--line-color);
 }
 
+.node-menu-trigger {
+  position: absolute;
+  top: 0.46rem;
+  right: 0.46rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, #ffffff 45%, transparent);
+  background: color-mix(in srgb, #ffffff 22%, transparent);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.node-menu-trigger:hover {
+  background: color-mix(in srgb, #ffffff 36%, transparent);
+}
+
 .node-person-icon {
   display: inline-flex;
   align-items: center;
@@ -491,11 +558,18 @@ body {
 
 .node-body {
   display: flex;
-  align-items: center;
-  gap: 0.55rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.36rem;
   padding: 0.74rem 0.88rem 0.84rem;
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
+}
+
+.node-person-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 .node-body .node-person-icon {
@@ -516,6 +590,7 @@ body {
 
 .node-role-input {
   width: 100%;
+  padding-right: 2.1rem;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 800;
@@ -707,15 +782,8 @@ body {
   .chart-print-scale {
     width: fit-content;
     transform-origin: top left;
-    transform: none;
-    zoom: var(--print-scale);
-  }
-
-  @supports not (zoom: 1) {
-    .chart-print-scale {
-      transform: scale(var(--print-scale));
-      zoom: 1;
-    }
+    transform: scale(var(--print-scale));
+    zoom: 1;
   }
 
   .chart-zoom-frame {
@@ -724,10 +792,62 @@ body {
   }
 
   .chart-content {
+    --print-line-color: color-mix(in srgb, var(--line-color) 58%, #000000);
+    --print-node-border: color-mix(in srgb, var(--node-border) 62%, #000000);
     min-width: 0;
     width: fit-content;
     padding-bottom: 0;
     transform: none !important;
+  }
+
+  .chart-content--svg-connectors .org-tree-root {
+    display: none;
+  }
+
+  .chart-content--svg-connectors .chart-print-node-layer {
+    display: block;
+  }
+
+  .org-tree-root ul,
+  .org-tree-root li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .org-tree-root li.org-tree-centered-node > ul.org-tree-horizontal-list::before,
+  .org-tree-root li.org-tree-horizontal-node > ul.org-tree-horizontal-list::before {
+    height: calc(var(--children-last-mid, 0px) + 1px);
+  }
+
+  .org-tree-root li::before,
+  .org-tree-root li::after {
+    width: 50%;
+  }
+
+  .org-tree-root li::before {
+    right: calc(50% - 1px);
+  }
+
+  .org-tree-root li::after {
+    left: calc(50% - 1px);
+  }
+
+  .org-tree-root li.org-tree-horizontal-node > .node-card::before {
+    left: -0.75rem;
+    width: calc(0.75rem + 1px);
+  }
+
+  .org-tree-root > li > ul > li::before,
+  .org-tree-root > li > ul > li::after {
+    width: calc(50% + 2px);
+  }
+
+  .org-tree-root > li > ul > li::before {
+    right: 50%;
+  }
+
+  .org-tree-root > li > ul > li::after {
+    left: 50%;
   }
 
   .chart-legend {
