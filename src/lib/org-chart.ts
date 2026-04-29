@@ -1,3 +1,8 @@
+import {
+  DEFAULT_PRINT_SETTINGS,
+  type PrintSettings,
+} from "@/lib/print-layout";
+
 export type ThemeId =
   | "ocean"
   | "forest"
@@ -21,6 +26,8 @@ export interface OrgProject {
   name: string;
   themeId: ThemeId;
   spreadTillLevel: number;
+  printSettings: PrintSettings;
+  windowZoom: number;
   root: OrgNode;
   legend: ChartLegend;
   createdAt: string;
@@ -43,6 +50,9 @@ export const MENU_HEIGHT = 356;
 export const MIN_SPREAD_TILL_LEVEL = 2;
 export const MAX_SPREAD_TILL_LEVEL = 8;
 export const DEFAULT_SPREAD_TILL_LEVEL = 3;
+export const MIN_WINDOW_ZOOM = 0.35;
+export const MAX_WINDOW_ZOOM = 2.4;
+export const DEFAULT_WINDOW_ZOOM = 1;
 
 export const THEMES: { id: ThemeId; name: string }[] = [
   { id: "ocean", name: "Ocean" },
@@ -71,6 +81,85 @@ function looksLikeNodeInput(value: unknown): value is Record<string, unknown> {
     "children" in value ||
     "id" in value
   );
+}
+
+function clonePrintSettings(settings: PrintSettings): PrintSettings {
+  return {
+    paperSize: settings.paperSize,
+    orientation: settings.orientation,
+    scaleMode: settings.scaleMode,
+    horizontalAlign: settings.horizontalAlign,
+    verticalAlign: settings.verticalAlign,
+    customScalePercent: settings.customScalePercent,
+  };
+}
+
+function normalizePrintSettings(value: unknown): PrintSettings {
+  if (!isRecord(value)) {
+    return clonePrintSettings(DEFAULT_PRINT_SETTINGS);
+  }
+
+  const paperSize =
+    value.paperSize === "a0" ||
+    value.paperSize === "a1" ||
+    value.paperSize === "a2" ||
+    value.paperSize === "a3" ||
+    value.paperSize === "a4" ||
+    value.paperSize === "a5" ||
+    value.paperSize === "a6" ||
+    value.paperSize === "tabloid" ||
+    value.paperSize === "letter" ||
+    value.paperSize === "legal" ||
+    value.paperSize === "ledger" ||
+    value.paperSize === "executive"
+      ? value.paperSize
+      : DEFAULT_PRINT_SETTINGS.paperSize;
+
+  const orientation =
+    value.orientation === "portrait" || value.orientation === "landscape"
+      ? value.orientation
+      : DEFAULT_PRINT_SETTINGS.orientation;
+
+  const scaleMode =
+    value.scaleMode === "fit" ||
+    value.scaleMode === "fit-width" ||
+    value.scaleMode === "fit-height" ||
+    value.scaleMode === "custom"
+      ? value.scaleMode
+      : DEFAULT_PRINT_SETTINGS.scaleMode;
+
+  const horizontalAlign =
+    value.horizontalAlign === "left" ||
+    value.horizontalAlign === "center" ||
+    value.horizontalAlign === "right"
+      ? value.horizontalAlign
+      : DEFAULT_PRINT_SETTINGS.horizontalAlign;
+
+  const verticalAlign =
+    value.verticalAlign === "top" ||
+    value.verticalAlign === "center" ||
+    value.verticalAlign === "bottom"
+      ? value.verticalAlign
+      : DEFAULT_PRINT_SETTINGS.verticalAlign;
+
+  const customScaleRaw =
+    typeof value.customScalePercent === "number"
+      ? value.customScalePercent
+      : typeof value.customScalePercent === "string"
+        ? Number.parseInt(value.customScalePercent, 10)
+        : Number.NaN;
+  const customScalePercent = Number.isFinite(customScaleRaw)
+    ? Math.max(10, Math.min(200, Math.round(customScaleRaw)))
+    : DEFAULT_PRINT_SETTINGS.customScalePercent;
+
+  return {
+    paperSize,
+    orientation,
+    scaleMode,
+    horizontalAlign,
+    verticalAlign,
+    customScalePercent,
+  };
 }
 
 export function createId(): string {
@@ -175,11 +264,28 @@ export function createProject(name: string, root?: OrgNode): OrgProject {
     name,
     themeId: "ocean",
     spreadTillLevel: DEFAULT_SPREAD_TILL_LEVEL,
+    printSettings: clonePrintSettings(DEFAULT_PRINT_SETTINGS),
+    windowZoom: DEFAULT_WINDOW_ZOOM,
     root: root ?? createNode("CEO", "Top Leadership"),
     legend: createDefaultLegend(name, timestamp),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+}
+
+export function clampWindowZoom(value: unknown): number {
+  const numeric =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseFloat(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_WINDOW_ZOOM;
+  }
+
+  return Math.min(MAX_WINDOW_ZOOM, Math.max(MIN_WINDOW_ZOOM, numeric));
 }
 
 export function clampSpreadTillLevel(value: unknown): number {
@@ -238,6 +344,8 @@ export function withFreshProjectIds(project: OrgProject): OrgProject {
       ...project.legend,
       date: isoDateFromTimestamp(timestamp),
     },
+    printSettings: normalizePrintSettings(project.printSettings),
+    windowZoom: clampWindowZoom(project.windowZoom),
     createdAt: timestamp,
     updatedAt: timestamp,
   };
@@ -299,6 +407,8 @@ export function normalizeProject(input: unknown): OrgProject | null {
     name,
     themeId: normalizeThemeId(input.themeId),
     spreadTillLevel: clampSpreadTillLevel(input.spreadTillLevel),
+    printSettings: normalizePrintSettings(input.printSettings),
+    windowZoom: clampWindowZoom(input.windowZoom),
     root: normalizedRoot,
     legend,
     createdAt,

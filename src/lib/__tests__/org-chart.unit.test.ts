@@ -94,6 +94,8 @@ describe("org-chart unit", () => {
     expect(parsed[0].name).toBe("Exec Team");
     expect(parsed[0].themeId).toBe("forest");
     expect(parsed[0].root.name).toBe("CEO");
+    expect(parsed[0].windowZoom).toBe(1);
+    expect(parsed[0].printSettings.paperSize).toBe("a4");
   });
 
   it("parses raw node payloads into a project", () => {
@@ -120,6 +122,15 @@ describe("org-chart unit", () => {
       name: "Original",
       themeId: "ocean",
       spreadTillLevel: 3,
+      printSettings: {
+        paperSize: "a4",
+        orientation: "landscape",
+        scaleMode: "fit",
+        horizontalAlign: "center",
+        verticalAlign: "top",
+        customScalePercent: 100,
+      },
+      windowZoom: 1,
       root: sampleTree(),
       legend: {
         title: "Original",

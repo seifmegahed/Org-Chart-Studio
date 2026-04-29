@@ -9,8 +9,11 @@ import {
 } from "react";
 
 import {
+  clampWindowZoom,
   MAX_SPREAD_TILL_LEVEL,
+  MAX_WINDOW_ZOOM,
   MIN_SPREAD_TILL_LEVEL,
+  MIN_WINDOW_ZOOM,
   THEMES,
   type ChartLegend,
   type OrgProject,
@@ -29,9 +32,11 @@ import Image from "next/image";
 
 type ProjectEditorProps = {
   activeProject: OrgProject;
+  zoom: number;
   nodeCount: number;
   onGoHome: () => void;
   onProjectNameChange: (nextName: string) => void;
+  onZoomChange: (nextZoom: number) => void;
   onThemeChange: (nextTheme: string) => void;
   onSpreadTillLevelChange: (nextLevel: number) => void;
   onImportClick: () => void;
@@ -46,8 +51,6 @@ type ProjectEditorProps = {
   onOpenMenu: (nodeId: string, x: number, y: number, depth: number) => void;
 };
 
-const MIN_ZOOM = 0.35;
-const MAX_ZOOM = 2.4;
 const ZOOM_FACTOR = 1.1;
 const DEEP_LEVEL_LEFT_ANCHOR_INSET = 18;
 const DEEP_LEVEL_PARENT_LINE_OFFSET = 5;
@@ -67,7 +70,7 @@ type PrintNodeShape = {
 };
 
 function clampZoom(value: number): number {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value));
+  return clampWindowZoom(value);
 }
 
 function splitMemberLines(value: string): string[] {
@@ -85,9 +88,11 @@ function splitMemberLines(value: string): string[] {
 
 export function ProjectEditor({
   activeProject,
+  zoom,
   nodeCount,
   onGoHome,
   onProjectNameChange,
+  onZoomChange,
   onThemeChange,
   onSpreadTillLevelChange,
   onImportClick,
@@ -99,7 +104,6 @@ export function ProjectEditor({
 }: ProjectEditorProps) {
   const chartViewportRef = useRef<HTMLDivElement | null>(null);
   const chartContentRef = useRef<HTMLDivElement | null>(null);
-  const [zoom, setZoom] = useState(1);
   const [chartSize, setChartSize] = useState({ width: 0, height: 0 });
   const [connectorCanvasSize, setConnectorCanvasSize] = useState({
     width: 0,
@@ -371,11 +375,11 @@ export function ProjectEditor({
   } as CSSProperties;
 
   const handleZoomIn = () => {
-    setZoom((currentZoom) => clampZoom(currentZoom * ZOOM_FACTOR));
+    onZoomChange(clampZoom(zoom * ZOOM_FACTOR));
   };
 
   const handleZoomOut = () => {
-    setZoom((currentZoom) => clampZoom(currentZoom / ZOOM_FACTOR));
+    onZoomChange(clampZoom(zoom / ZOOM_FACTOR));
   };
 
   const handleZoomToFit = () => {
@@ -393,7 +397,7 @@ export function ProjectEditor({
       (viewportElement.clientHeight - 16) / chartSize.height,
     );
 
-    setZoom(clampZoom(Math.min(widthScale, heightScale)));
+    onZoomChange(clampZoom(Math.min(widthScale, heightScale)));
   };
 
   const zoomPercent = Math.round(zoom * 100);
@@ -487,6 +491,7 @@ export function ProjectEditor({
             onClick={handleZoomOut}
             title="Zoom out"
             aria-label="Zoom out"
+            disabled={zoom <= MIN_WINDOW_ZOOM + 0.001}
           >
             <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
               <path d="M4 10a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z" />
@@ -498,6 +503,7 @@ export function ProjectEditor({
             onClick={handleZoomIn}
             title="Zoom in"
             aria-label="Zoom in"
+            disabled={zoom >= MAX_WINDOW_ZOOM - 0.001}
           >
             <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
               <path d="M10 4a1 1 0 0 1 1 1v4h4a1 1 0 1 1 0 2h-4v4a1 1 0 1 1-2 0v-4H5a1 1 0 1 1 0-2h4V5a1 1 0 0 1 1-1Z" />

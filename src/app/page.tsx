@@ -32,6 +32,7 @@ import {
   STORAGE_KEY,
   addChildNode,
   clampSpreadTillLevel,
+  clampWindowZoom,
   clampMenuPosition,
   countNodes,
   createProject,
@@ -100,9 +101,6 @@ export default function Home() {
   const [deleteProjectDialog, setDeleteProjectDialog] =
     useState<DeleteProjectDialogState | null>(null);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
-  const [printSettings, setPrintSettings] = useState<PrintSettings>(
-    DEFAULT_PRINT_SETTINGS,
-  );
   const [chartDimensions, setChartDimensions] = useState<ChartDimensions | null>(
     null,
   );
@@ -113,6 +111,7 @@ export default function Home() {
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [activeProjectId, projects],
   );
+  const activePrintSettings = activeProject?.printSettings ?? DEFAULT_PRINT_SETTINGS;
 
   const activeTheme = activeProject?.themeId ?? "ocean";
 
@@ -257,7 +256,7 @@ export default function Home() {
 
   useEffect(() => {
     const syncPrintSettings = () => {
-      applyPrintSettings(printSettings);
+      applyPrintSettings(activePrintSettings);
     };
 
     const clearPrintSettings = () => {
@@ -295,7 +294,7 @@ export default function Home() {
       window.removeEventListener("afterprint", clearPrintSettings);
       printMediaQuery?.removeEventListener("change", handlePrintMediaChange);
     };
-  }, [applyPrintSettings, clearPrintPageRule, printSettings]);
+  }, [activePrintSettings, applyPrintSettings, clearPrintPageRule]);
 
   useEffect(() => {
     if (!activeProject || !reparentSourceNodeId) {
@@ -648,7 +647,7 @@ export default function Home() {
   };
 
   const handleConfirmPrint = () => {
-    applyPrintSettings(printSettings);
+    applyPrintSettings(activePrintSettings);
     pendingPrintRef.current = true;
     setPrintDialogOpen(false);
     window.requestAnimationFrame(() => {
@@ -785,6 +784,7 @@ export default function Home() {
         ) : (
           <ProjectEditor
             activeProject={activeProject}
+            zoom={activeProject.windowZoom}
             nodeCount={countNodes(activeProject.root)}
             onGoHome={() => {
               setReparentSourceNodeId(null);
@@ -806,6 +806,12 @@ export default function Home() {
               updateActiveProject((project) => ({
                 ...project,
                 spreadTillLevel: clampSpreadTillLevel(nextLevel),
+              }));
+            }}
+            onZoomChange={(nextZoom) => {
+              updateActiveProject((project) => ({
+                ...project,
+                windowZoom: clampWindowZoom(nextZoom),
               }));
             }}
             onImportClick={handleImportClick}
@@ -849,7 +855,7 @@ export default function Home() {
 
       <PrintSetupDialog
         open={printDialogOpen}
-        settings={printSettings}
+        settings={activePrintSettings}
         chartDimensions={chartDimensions}
         onOpenChange={(open) => {
           setPrintDialogOpen(open);
@@ -857,7 +863,12 @@ export default function Home() {
             setChartDimensions(readChartDimensions());
           }
         }}
-        onSettingsChange={setPrintSettings}
+        onSettingsChange={(nextPrintSettings: PrintSettings) => {
+          updateActiveProject((project) => ({
+            ...project,
+            printSettings: nextPrintSettings,
+          }));
+        }}
         onConfirmPrint={handleConfirmPrint}
       />
 

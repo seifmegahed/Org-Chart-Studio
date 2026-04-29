@@ -3,6 +3,8 @@
 :root {
   color-scheme: light;
   --print-scale: 1;
+  --print-offset-x: 0px;
+  --print-offset-y: 0px;
 }
 
 body {
@@ -782,7 +784,8 @@ body {
   .chart-print-scale {
     width: fit-content;
     transform-origin: top left;
-    transform: scale(var(--print-scale));
+    transform: translate(var(--print-offset-x), var(--print-offset-y))
+      scale(var(--print-scale));
     zoom: 1;
   }
 
