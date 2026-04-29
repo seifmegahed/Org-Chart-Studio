@@ -26,6 +26,7 @@ export interface OrgProject {
   name: string;
   themeId: ThemeId;
   spreadTillLevel: number;
+  fontSizes: NodeFontSizes;
   printSettings: PrintSettings;
   windowZoom: number;
   root: OrgNode;
@@ -42,6 +43,11 @@ export interface ChartLegend {
   revisionNumber: string;
 }
 
+export interface NodeFontSizes {
+  titlePx: number;
+  namePx: number;
+}
+
 export const STORAGE_KEY = "org-chart-projects-v1";
 export const LAST_PROJECT_KEY = "org-chart-last-project-v1";
 export const EXPORT_VERSION = 1;
@@ -53,6 +59,12 @@ export const DEFAULT_SPREAD_TILL_LEVEL = 3;
 export const MIN_WINDOW_ZOOM = 0.35;
 export const MAX_WINDOW_ZOOM = 2.4;
 export const DEFAULT_WINDOW_ZOOM = 1;
+export const MIN_TITLE_FONT_SIZE_PX = 12;
+export const MAX_TITLE_FONT_SIZE_PX = 24;
+export const DEFAULT_TITLE_FONT_SIZE_PX = 16;
+export const MIN_NAME_FONT_SIZE_PX = 11;
+export const MAX_NAME_FONT_SIZE_PX = 22;
+export const DEFAULT_NAME_FONT_SIZE_PX = 14;
 
 export const THEMES: { id: ThemeId; name: string }[] = [
   { id: "ocean", name: "Ocean" },
@@ -162,6 +174,50 @@ function normalizePrintSettings(value: unknown): PrintSettings {
   };
 }
 
+function clampFontSize(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+  fallback: number,
+): number {
+  const numeric =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number.parseFloat(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(numeric)) {
+    return fallback;
+  }
+
+  return Math.min(maximum, Math.max(minimum, Math.round(numeric)));
+}
+
+export function normalizeNodeFontSizes(value: unknown): NodeFontSizes {
+  if (!isRecord(value)) {
+    return {
+      titlePx: DEFAULT_TITLE_FONT_SIZE_PX,
+      namePx: DEFAULT_NAME_FONT_SIZE_PX,
+    };
+  }
+
+  return {
+    titlePx: clampFontSize(
+      value.titlePx,
+      MIN_TITLE_FONT_SIZE_PX,
+      MAX_TITLE_FONT_SIZE_PX,
+      DEFAULT_TITLE_FONT_SIZE_PX,
+    ),
+    namePx: clampFontSize(
+      value.namePx,
+      MIN_NAME_FONT_SIZE_PX,
+      MAX_NAME_FONT_SIZE_PX,
+      DEFAULT_NAME_FONT_SIZE_PX,
+    ),
+  };
+}
+
 export function createId(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -264,6 +320,7 @@ export function createProject(name: string, root?: OrgNode): OrgProject {
     name,
     themeId: "ocean",
     spreadTillLevel: DEFAULT_SPREAD_TILL_LEVEL,
+    fontSizes: normalizeNodeFontSizes(null),
     printSettings: clonePrintSettings(DEFAULT_PRINT_SETTINGS),
     windowZoom: DEFAULT_WINDOW_ZOOM,
     root: root ?? createNode("CEO", "Top Leadership"),
@@ -344,6 +401,7 @@ export function withFreshProjectIds(project: OrgProject): OrgProject {
       ...project.legend,
       date: isoDateFromTimestamp(timestamp),
     },
+    fontSizes: normalizeNodeFontSizes(project.fontSizes),
     printSettings: normalizePrintSettings(project.printSettings),
     windowZoom: clampWindowZoom(project.windowZoom),
     createdAt: timestamp,
@@ -407,6 +465,7 @@ export function normalizeProject(input: unknown): OrgProject | null {
     name,
     themeId: normalizeThemeId(input.themeId),
     spreadTillLevel: clampSpreadTillLevel(input.spreadTillLevel),
+    fontSizes: normalizeNodeFontSizes(input.fontSizes),
     printSettings: normalizePrintSettings(input.printSettings),
     windowZoom: clampWindowZoom(input.windowZoom),
     root: normalizedRoot,

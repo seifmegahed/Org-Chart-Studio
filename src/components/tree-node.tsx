@@ -14,6 +14,8 @@ type TreeNodeProps = {
   node: OrgNode;
   depth: number;
   spreadTillLevel: number;
+  titleFontSizePx: number;
+  nameFontSizePx: number;
   onNodeFieldChange: (
     nodeId: string,
     field: "name" | "title",
@@ -81,6 +83,8 @@ export function TreeNode({
   node,
   depth,
   spreadTillLevel,
+  titleFontSizePx,
+  nameFontSizePx,
   onNodeFieldChange,
   onOpenMenu,
 }: TreeNodeProps) {
@@ -193,8 +197,13 @@ export function TreeNode({
     pendingFocusRowIndexRef.current = null;
   }, [memberLines]);
 
-  const nameWidthPx = measureTextWidthPx(headerRoleText, "800", 16, 0.01);
-  const roleWidthPx = measureTextWidthPx(bodyNameText, "600", 14.72);
+  const nameWidthPx = measureTextWidthPx(
+    headerRoleText,
+    "800",
+    titleFontSizePx,
+    0.01,
+  );
+  const roleWidthPx = measureTextWidthPx(bodyNameText, "600", nameFontSizePx);
 
   const headerHorizontalPaddingPx = 16 * 2;
   const bodyHorizontalPaddingPx = 14.08 * 2;
@@ -208,6 +217,8 @@ export function TreeNode({
 
   const nodeCardStyle = {
     "--node-card-width": `${nodeCardWidthPx}px`,
+    "--node-title-font-size": `${titleFontSizePx}px`,
+    "--node-name-font-size": `${nameFontSizePx}px`,
   } as CSSProperties;
 
   const nodeListItemStyle = {
@@ -325,6 +336,8 @@ export function TreeNode({
               node={child}
               depth={depth + 1}
               spreadTillLevel={spreadTillLevel}
+              titleFontSizePx={titleFontSizePx}
+              nameFontSizePx={nameFontSizePx}
               onNodeFieldChange={onNodeFieldChange}
               onOpenMenu={onOpenMenu}
             />

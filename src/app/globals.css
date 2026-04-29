@@ -594,7 +594,7 @@ body {
   width: 100%;
   padding-right: 2.1rem;
   color: #ffffff;
-  font-size: 1rem;
+  font-size: var(--node-title-font-size, 1rem);
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: 0.01em;
@@ -607,7 +607,7 @@ body {
 .node-name-input {
   width: 100%;
   color: var(--main-text);
-  font-size: 0.92rem;
+  font-size: var(--node-name-font-size, 0.92rem);
   font-weight: 600;
   line-height: 1.35;
 }

@@ -808,6 +808,12 @@ export default function Home() {
                 spreadTillLevel: clampSpreadTillLevel(nextLevel),
               }));
             }}
+            onFontSizesChange={(nextFontSizes) => {
+              updateActiveProject((project) => ({
+                ...project,
+                fontSizes: nextFontSizes,
+              }));
+            }}
             onZoomChange={(nextZoom) => {
               updateActiveProject((project) => ({
                 ...project,

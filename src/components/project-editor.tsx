@@ -10,12 +10,17 @@ import {
 
 import {
   clampWindowZoom,
+  MAX_NAME_FONT_SIZE_PX,
   MAX_SPREAD_TILL_LEVEL,
+  MAX_TITLE_FONT_SIZE_PX,
   MAX_WINDOW_ZOOM,
+  MIN_NAME_FONT_SIZE_PX,
   MIN_SPREAD_TILL_LEVEL,
+  MIN_TITLE_FONT_SIZE_PX,
   MIN_WINDOW_ZOOM,
   THEMES,
   type ChartLegend,
+  type NodeFontSizes,
   type OrgProject,
 } from "@/lib/org-chart";
 
@@ -37,6 +42,7 @@ type ProjectEditorProps = {
   onGoHome: () => void;
   onProjectNameChange: (nextName: string) => void;
   onZoomChange: (nextZoom: number) => void;
+  onFontSizesChange: (nextFontSizes: NodeFontSizes) => void;
   onThemeChange: (nextTheme: string) => void;
   onSpreadTillLevelChange: (nextLevel: number) => void;
   onImportClick: () => void;
@@ -93,6 +99,7 @@ export function ProjectEditor({
   onGoHome,
   onProjectNameChange,
   onZoomChange,
+  onFontSizesChange,
   onThemeChange,
   onSpreadTillLevelChange,
   onImportClick,
@@ -111,6 +118,8 @@ export function ProjectEditor({
   });
   const [connectorPaths, setConnectorPaths] = useState<string[]>([]);
   const [printNodeShapes, setPrintNodeShapes] = useState<PrintNodeShape[]>([]);
+  const titleFontSizePx = activeProject.fontSizes.titlePx;
+  const nameFontSizePx = activeProject.fontSizes.namePx;
 
   const nodeTextMap = useMemo(() => {
     const textMap = new Map<string, { title: string; names: string[] }>();
@@ -400,6 +409,46 @@ export function ProjectEditor({
     onZoomChange(clampZoom(Math.min(widthScale, heightScale)));
   };
 
+  const handleTitleFontSizeChange = (nextValue: unknown) => {
+    const numeric =
+      typeof nextValue === "number"
+        ? nextValue
+        : typeof nextValue === "string"
+          ? Number.parseInt(nextValue, 10)
+          : Number.NaN;
+    if (!Number.isFinite(numeric)) {
+      return;
+    }
+
+    onFontSizesChange({
+      ...activeProject.fontSizes,
+      titlePx: Math.max(
+        MIN_TITLE_FONT_SIZE_PX,
+        Math.min(MAX_TITLE_FONT_SIZE_PX, Math.round(numeric)),
+      ),
+    });
+  };
+
+  const handleNameFontSizeChange = (nextValue: unknown) => {
+    const numeric =
+      typeof nextValue === "number"
+        ? nextValue
+        : typeof nextValue === "string"
+          ? Number.parseInt(nextValue, 10)
+          : Number.NaN;
+    if (!Number.isFinite(numeric)) {
+      return;
+    }
+
+    onFontSizesChange({
+      ...activeProject.fontSizes,
+      namePx: Math.max(
+        MIN_NAME_FONT_SIZE_PX,
+        Math.min(MAX_NAME_FONT_SIZE_PX, Math.round(numeric)),
+      ),
+    });
+  };
+
   const zoomPercent = Math.round(zoom * 100);
 
   return (
@@ -448,6 +497,36 @@ export function ProjectEditor({
               className="w-14 rounded-md border border-[--panel-border] bg-white px-1.5 py-0.5 text-right text-xs font-bold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
               title="Depth where horizontal spread starts"
               aria-label="Spread till level"
+            />
+          </label>
+          <label className="inline-flex items-center gap-2 rounded-lg border border-[--panel-border] bg-white px-2.5 py-1.5 text-xs font-semibold text-[--muted-text]">
+            <span>Title px</span>
+            <input
+              type="number"
+              min={MIN_TITLE_FONT_SIZE_PX}
+              max={MAX_TITLE_FONT_SIZE_PX}
+              value={titleFontSizePx}
+              onChange={(event) => {
+                handleTitleFontSizeChange(event.target.value);
+              }}
+              className="w-14 rounded-md border border-[--panel-border] bg-white px-1.5 py-0.5 text-right text-xs font-bold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
+              title="Node title font size"
+              aria-label="Node title font size"
+            />
+          </label>
+          <label className="inline-flex items-center gap-2 rounded-lg border border-[--panel-border] bg-white px-2.5 py-1.5 text-xs font-semibold text-[--muted-text]">
+            <span>Name px</span>
+            <input
+              type="number"
+              min={MIN_NAME_FONT_SIZE_PX}
+              max={MAX_NAME_FONT_SIZE_PX}
+              value={nameFontSizePx}
+              onChange={(event) => {
+                handleNameFontSizeChange(event.target.value);
+              }}
+              className="w-14 rounded-md border border-[--panel-border] bg-white px-1.5 py-0.5 text-right text-xs font-bold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
+              title="Node name font size"
+              aria-label="Node name font size"
             />
           </label>
           <button
@@ -574,7 +653,7 @@ export function ProjectEditor({
                     const bodyStartY = node.y + headerHeight;
                     const bodyHeight = Math.max(0, node.height - headerHeight);
                     const names = node.names.length > 0 ? node.names : ["New Member"];
-                    const rowGap = 18;
+                    const rowGap = Math.max(16, nameFontSizePx + 5);
                     const blockHeight = (Math.max(1, names.length) - 1) * rowGap;
                     const firstRowY = bodyStartY + Math.max(14, (bodyHeight - blockHeight) / 2);
                     const maxRowY = node.y + node.height - 10;
@@ -613,7 +692,7 @@ export function ProjectEditor({
                           x={node.x + 12}
                           y={node.y + headerHeight / 2}
                           fill="#ffffff"
-                          fontSize="14"
+                          fontSize={titleFontSizePx}
                           fontWeight="800"
                           dominantBaseline="middle"
                         >
@@ -646,7 +725,7 @@ export function ProjectEditor({
                                 x={node.x + 36}
                                 y={rowY}
                                 fill="var(--main-text)"
-                                fontSize="13"
+                                fontSize={nameFontSizePx}
                                 fontWeight="600"
                                 dominantBaseline="middle"
                               >
@@ -664,6 +743,8 @@ export function ProjectEditor({
                     node={activeProject.root}
                     depth={1}
                     spreadTillLevel={activeProject.spreadTillLevel}
+                    titleFontSizePx={titleFontSizePx}
+                    nameFontSizePx={nameFontSizePx}
                     onNodeFieldChange={onNodeFieldChange}
                     onOpenMenu={onOpenMenu}
                   />

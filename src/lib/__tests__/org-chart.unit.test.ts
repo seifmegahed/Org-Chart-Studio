@@ -96,6 +96,8 @@ describe("org-chart unit", () => {
     expect(parsed[0].root.name).toBe("CEO");
     expect(parsed[0].windowZoom).toBe(1);
     expect(parsed[0].printSettings.paperSize).toBe("a4");
+    expect(parsed[0].fontSizes.titlePx).toBe(16);
+    expect(parsed[0].fontSizes.namePx).toBe(14);
   });
 
   it("parses raw node payloads into a project", () => {
@@ -122,6 +124,10 @@ describe("org-chart unit", () => {
       name: "Original",
       themeId: "ocean",
       spreadTillLevel: 3,
+      fontSizes: {
+        titlePx: 16,
+        namePx: 14,
+      },
       printSettings: {
         paperSize: "a4",
         orientation: "landscape",
