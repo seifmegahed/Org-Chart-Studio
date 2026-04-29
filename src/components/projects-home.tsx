@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
+
 import { THEMES, formatDate, type OrgProject } from "@/lib/org-chart";
-import { Plus, Trash2, Upload } from "lucide-react";
+import { CircleHelp, Plus, Trash2, Upload } from "lucide-react";
 
 type ProjectsHomeProps = {
   projects: OrgProject[];
@@ -34,11 +36,29 @@ export function ProjectsHome({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="primary-btn" onClick={onCreateNewProject} title="New Project" aria-label="New Project">
-            <Plus />
-          </button>
-          <button className="secondary-btn" onClick={onImportClick} title="Import" aria-label="Import">
+          <Link
+            href="/help"
+            className="secondary-btn"
+            title="Help"
+            aria-label="Help"
+          >
+            <CircleHelp />
+          </Link>
+          <button
+            className="secondary-btn"
+            onClick={onImportClick}
+            title="Import"
+            aria-label="Import"
+          >
             <Upload />
+          </button>
+          <button
+            className="primary-btn"
+            onClick={onCreateNewProject}
+            title="New Project"
+            aria-label="New Project"
+          >
+            <Plus />
           </button>
         </div>
       </div>
@@ -59,7 +79,8 @@ export function ProjectsHome({
                   {project.name}
                 </h2>
                 <p className="mt-1 text-xs uppercase tracking-[0.13em] text-[--muted-text]">
-                  Theme: {THEMES.find((theme) => theme.id === project.themeId)?.name}
+                  Theme:{" "}
+                  {THEMES.find((theme) => theme.id === project.themeId)?.name}
                 </p>
                 <p className="mt-3 text-xs text-[--muted-text]">
                   Updated {formatDate(project.updatedAt)}

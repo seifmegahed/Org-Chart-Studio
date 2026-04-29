@@ -32,7 +32,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Home, Printer, Upload } from "lucide-react";
+import { CircleHelp, Download, Home, Printer, Upload } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
 
 type ProjectEditorProps = {
@@ -545,6 +546,14 @@ export function ProjectEditor({
           >
             <Download />
           </button>
+          <Link
+            href="/help"
+            className="secondary-btn"
+            title="Help"
+            aria-label="Help"
+          >
+            <CircleHelp />
+          </Link>
           <button
             className="primary-btn"
             onClick={onPrint}
