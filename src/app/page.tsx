@@ -664,7 +664,7 @@ export default function Home() {
   if (!ready) {
     return (
       <main className="app-shell flex min-h-screen items-center justify-center">
-        <div className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-6 py-4 text-sm font-medium text-[var(--muted-text)]">
+        <div className="rounded-xl border border-[--panel-border] bg-[--panel-bg] px-6 py-4 text-sm font-medium text-[--muted-text]">
           Loading projects...
         </div>
       </main>
