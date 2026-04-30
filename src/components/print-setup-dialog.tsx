@@ -98,7 +98,7 @@ export function PrintSetupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[720px]">
+      <DialogContent className="sm:max-w-180">
         <DialogHeader>
           <DialogTitle>Print Setup</DialogTitle>
           <DialogDescription>
