@@ -84,7 +84,7 @@ describe("org-chart unit", () => {
         themeId: "forest",
         root: sampleTree(),
         createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-15T00:00:00.000Z",
       },
     };
 
@@ -94,6 +94,8 @@ describe("org-chart unit", () => {
     expect(parsed[0].name).toBe("Exec Team");
     expect(parsed[0].themeId).toBe("forest");
     expect(parsed[0].root.name).toBe("Nameless");
+    expect(parsed[0].createdAt).toBe("2026-01-01T00:00:00.000Z");
+    expect(parsed[0].updatedAt).toBe("2026-01-15T00:00:00.000Z");
     expect(parsed[0].windowZoom).toBe(1);
     expect(parsed[0].printSettings.paperSize).toBe("a4");
     expect(parsed[0].fontSizes.titlePx).toBe(16);

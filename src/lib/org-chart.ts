@@ -459,7 +459,13 @@ export function normalizeProject(input: unknown): OrgProject | null {
       : "Imported Project";
 
   const createdAt =
-    typeof input.createdAt === "string" ? input.createdAt : nowISO();
+    typeof input.createdAt === "string" && input.createdAt.trim().length > 0
+      ? input.createdAt
+      : nowISO();
+  const updatedAt =
+    typeof input.updatedAt === "string" && input.updatedAt.trim().length > 0
+      ? input.updatedAt
+      : createdAt;
   const legend = normalizeLegend(input.legend, name, createdAt);
 
   return {
@@ -476,7 +482,7 @@ export function normalizeProject(input: unknown): OrgProject | null {
     root: normalizedRoot,
     legend,
     createdAt,
-    updatedAt: nowISO(),
+    updatedAt,
   };
 }
 

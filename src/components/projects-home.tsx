@@ -83,6 +83,9 @@ export function ProjectsHome({
                   {THEMES.find((theme) => theme.id === project.themeId)?.name}
                 </p>
                 <p className="mt-3 text-xs text-[--muted-text]">
+                  Created {formatDate(project.createdAt)}
+                </p>
+                <p className="mt-1 text-xs text-[--muted-text]">
                   Updated {formatDate(project.updatedAt)}
                 </p>
               </div>
