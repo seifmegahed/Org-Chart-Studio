@@ -86,11 +86,11 @@ function splitMemberLines(value: string): string[] {
     .map((line) => line.slice(0, MEMBER_NAME_MAX_LENGTH));
 
   if (lines.length === 0) {
-    return ["New Member"];
+    return [""];
   }
 
   const allBlank = lines.every((line) => line.trim().length === 0);
-  return allBlank ? ["New Member"] : lines;
+  return allBlank ? [""] : lines;
 }
 
 export function ProjectEditor({
@@ -259,8 +259,8 @@ export function ProjectEditor({
               (headerElement?.getBoundingClientRect().height ?? 0) / scaleY ||
                 Math.min(62, (parentRect.height / scaleY) * 0.5),
             ),
-            title: nodeText?.title ?? "Role",
-            names: nodeText?.names ?? ["New Member"],
+            title: nodeText?.title ?? "",
+            names: nodeText?.names ?? [""],
           });
         }
 
@@ -661,7 +661,7 @@ export function ProjectEditor({
                     const headerHeight = Math.max(1, node.headerHeight);
                     const bodyStartY = node.y + headerHeight;
                     const bodyHeight = Math.max(0, node.height - headerHeight);
-                    const names = node.names.length > 0 ? node.names : ["New Member"];
+                    const names = node.names.length > 0 ? node.names : [""];
                     const rowGap = Math.max(16, nameFontSizePx + 5);
                     const blockHeight = (Math.max(1, names.length) - 1) * rowGap;
                     const firstRowY = bodyStartY + Math.max(14, (bodyHeight - blockHeight) / 2);
@@ -712,9 +712,7 @@ export function ProjectEditor({
                           const displayName =
                             personName.trim().length > 0
                               ? personName
-                              : personIndex === 0
-                                ? "New Member"
-                                : "Member";
+                              : ""
 
                           return (
                             <g key={`${node.id}-person-${personIndex}`}>

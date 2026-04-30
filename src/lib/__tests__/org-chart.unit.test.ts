@@ -19,8 +19,8 @@ import {
 function sampleTree(): OrgNode {
   return {
     id: "root",
-    name: "CEO",
-    title: "Chief Executive Officer",
+    name: "Nameless",
+    title: "CEO",
     children: [
       {
         id: "a",
@@ -93,7 +93,7 @@ describe("org-chart unit", () => {
     expect(parsed).toHaveLength(1);
     expect(parsed[0].name).toBe("Exec Team");
     expect(parsed[0].themeId).toBe("forest");
-    expect(parsed[0].root.name).toBe("CEO");
+    expect(parsed[0].root.name).toBe("Nameless");
     expect(parsed[0].windowZoom).toBe(1);
     expect(parsed[0].printSettings.paperSize).toBe("a4");
     expect(parsed[0].fontSizes.titlePx).toBe(16);

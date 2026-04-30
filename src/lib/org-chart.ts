@@ -303,7 +303,7 @@ function normalizeLegend(
   };
 }
 
-export function createNode(name = "New Member", title = "Role"): OrgNode {
+export function createNode(name = "", title = ""): OrgNode {
   return {
     id: createId(),
     name,
@@ -323,7 +323,7 @@ export function createProject(name: string, root?: OrgNode): OrgProject {
     fontSizes: normalizeNodeFontSizes(null),
     printSettings: clonePrintSettings(DEFAULT_PRINT_SETTINGS),
     windowZoom: DEFAULT_WINDOW_ZOOM,
-    root: root ?? createNode("CEO", "Top Leadership"),
+    root: root ?? createNode(),
     legend: createDefaultLegend(name, timestamp),
     createdAt: timestamp,
     updatedAt: timestamp,

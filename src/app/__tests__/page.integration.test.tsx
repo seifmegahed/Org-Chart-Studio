@@ -50,8 +50,8 @@ describe("Home integration", () => {
           themeId: "forest",
           root: {
             id: "root-1",
-            name: "CEO",
-            title: "Leader",
+            name: "Nameless",
+            title: "CEO",
             children: [],
           },
           createdAt: "2026-01-01T00:00:00.000Z",

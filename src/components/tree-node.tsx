@@ -95,7 +95,7 @@ export function TreeNode({
       (longestLine, line) =>
         line.length > longestLine.length ? line : longestLine,
       "",
-    ) || "New Member";
+    );
   const isHorizontalNode = depth > spreadTillLevel;
   const childListHorizontal = depth >= spreadTillLevel;
   const nodeItemClassName = isHorizontalNode
@@ -314,7 +314,7 @@ export function TreeNode({
                   }
                 }}
                 className="node-name-input"
-                placeholder={lineIndex === 0 ? "New Member" : "Member"}
+                placeholder="Name"
                 maxLength={MEMBER_NAME_MAX_LENGTH}
               />
             </div>
