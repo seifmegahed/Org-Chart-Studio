@@ -898,7 +898,9 @@ export function formatDate(value: string): string {
   const day = `${parsed.getDate()}`.padStart(2, "0");
   const month = `${parsed.getMonth() + 1}`.padStart(2, "0");
   const year = `${parsed.getFullYear()}`;
-  return `${day}/${month}/${year}`;
+  const hours = `${parsed.getHours()}`.padStart(2, "0");
+  const minutes = `${parsed.getMinutes()}`.padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
 export function downloadJson(fileName: string, payload: unknown): void {

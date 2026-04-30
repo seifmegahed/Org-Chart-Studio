@@ -121,8 +121,8 @@ describe("org-chart unit", () => {
     expect(normalizeThemeId("unknown-theme")).toBe("ocean");
   });
 
-  it("formats timestamps as dd/mm/yyyy", () => {
-    expect(formatDate("2026-01-05T12:34:56.000Z")).toBe("05/01/2026");
+  it("formats timestamps as dd/mm/yyyy hh:mm", () => {
+    expect(formatDate("2026-01-05T12:34:56")).toBe("05/01/2026 12:34");
     expect(formatDate("not-a-date")).toBe("not-a-date");
   });
 
