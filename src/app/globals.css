@@ -526,9 +526,9 @@ body {
   height: 1.8rem;
   border-radius: 7px;
   border: 1px solid color-mix(in srgb, #ffffff 45%, transparent);
-  background: color-mix(in srgb, #ffffff 22%, transparent);
+  /* background: color-mix(in srgb, #ffffff 22%, transparent); */
   color: #ffffff;
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   line-height: 1;
@@ -592,7 +592,7 @@ body {
 
 .node-role-input {
   width: 100%;
-  padding-right: 2.1rem;
+  padding-right: 0;
   color: #ffffff;
   font-size: var(--node-title-font-size, 1rem);
   font-weight: 800;
@@ -721,6 +721,14 @@ body {
 }
 
 @media (max-width: 900px) {
+  .node-header {
+    padding-right: 2.9rem;
+  }
+
+  .node-menu-trigger {
+    display: inline-flex;
+  }
+
   .chart-legend {
     width: min(96vw, 290px);
     right: 0.6rem;
