@@ -78,6 +78,11 @@ export const THEMES: { id: ThemeId; name: string }[] = [
   { id: "ruby", name: "Ruby" },
 ];
 
+function getRandomThemeId(): ThemeId {
+  const index = Math.floor(Math.random() * THEMES.length);
+  return THEMES[index]?.id ?? "ocean";
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -318,7 +323,7 @@ export function createProject(name: string, root?: OrgNode): OrgProject {
   return {
     id: createId(),
     name,
-    themeId: "ocean",
+    themeId: getRandomThemeId(),
     spreadTillLevel: DEFAULT_SPREAD_TILL_LEVEL,
     fontSizes: normalizeNodeFontSizes(null),
     printSettings: clonePrintSettings(DEFAULT_PRINT_SETTINGS),
