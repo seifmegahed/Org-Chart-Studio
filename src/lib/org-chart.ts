@@ -108,6 +108,7 @@ function clonePrintSettings(settings: PrintSettings): PrintSettings {
     horizontalAlign: settings.horizontalAlign,
     verticalAlign: settings.verticalAlign,
     customScalePercent: settings.customScalePercent,
+    showLegendOnPrint: settings.showLegendOnPrint,
   };
 }
 
@@ -168,6 +169,10 @@ function normalizePrintSettings(value: unknown): PrintSettings {
   const customScalePercent = Number.isFinite(customScaleRaw)
     ? Math.max(10, Math.min(200, Math.round(customScaleRaw)))
     : DEFAULT_PRINT_SETTINGS.customScalePercent;
+  const showLegendOnPrint =
+    typeof value.showLegendOnPrint === "boolean"
+      ? value.showLegendOnPrint
+      : DEFAULT_PRINT_SETTINGS.showLegendOnPrint;
 
   return {
     paperSize,
@@ -176,6 +181,7 @@ function normalizePrintSettings(value: unknown): PrintSettings {
     horizontalAlign,
     verticalAlign,
     customScalePercent,
+    showLegendOnPrint,
   };
 }
 

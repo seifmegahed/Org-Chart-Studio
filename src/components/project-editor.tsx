@@ -874,7 +874,11 @@ export function ProjectEditor({
           </div>
         </div>
         <aside
-          className="chart-legend"
+          className={
+            activeProject.printSettings.showLegendOnPrint === false
+              ? "chart-legend print-hidden"
+              : "chart-legend"
+          }
           aria-label="Chart legend"
           id="chart-legend"
         >

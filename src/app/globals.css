@@ -263,6 +263,13 @@ body {
   padding: 0.7rem;
   display: grid;
   gap: 0.38rem;
+  opacity: 0.52;
+  transition: opacity 0.5s ease-out;
+}
+
+.chart-legend:hover,
+.chart-legend:focus-within {
+  opacity: 1;
 }
 
 .chart-legend h3 {
@@ -874,6 +881,8 @@ body {
     background: #ffffff;
     padding: 2.2mm 2.5mm;
     gap: 1.3mm;
+    opacity: 1;
+    transition: none;
   }
 
   .chart-legend h3 {

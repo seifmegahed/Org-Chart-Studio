@@ -99,6 +99,7 @@ describe("org-chart unit", () => {
     expect(parsed[0].updatedAt).toBe("2026-01-15T00:00:00.000Z");
     expect(parsed[0].windowZoom).toBe(1);
     expect(parsed[0].printSettings.paperSize).toBe("a4");
+    expect(parsed[0].printSettings.showLegendOnPrint).toBe(true);
     expect(parsed[0].fontSizes.titlePx).toBe(16);
     expect(parsed[0].fontSizes.namePx).toBe(14);
   });
@@ -143,6 +144,7 @@ describe("org-chart unit", () => {
         horizontalAlign: "center",
         verticalAlign: "top",
         customScalePercent: 100,
+        showLegendOnPrint: true,
       },
       windowZoom: 1,
       root: sampleTree(),

@@ -218,6 +218,28 @@ export function PrintSetupDialog({
               </SelectContent>
             </Select>
           </label>
+
+          <label className="grid gap-1 text-sm">
+            <span className="font-semibold text-[--muted-text]">
+              Legend On Print
+            </span>
+            <Select
+              value={settings.showLegendOnPrint === false ? "hide" : "show"}
+              onValueChange={(nextValue) => {
+                updateSettings({
+                  showLegendOnPrint: nextValue === "show",
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select legend visibility" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="show">Show</SelectItem>
+                <SelectItem value="hide">Hide</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
         </div>
 
         {settings.scaleMode === "custom" ? (

@@ -24,6 +24,7 @@ export interface PrintSettings {
   horizontalAlign: PrintHorizontalAlign;
   verticalAlign: PrintVerticalAlign;
   customScalePercent: number;
+  showLegendOnPrint: boolean;
 }
 
 export interface ChartDimensions {
@@ -72,6 +73,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
   horizontalAlign: "center",
   verticalAlign: "top",
   customScalePercent: DEFAULT_PRINT_SCALE_PERCENT,
+  showLegendOnPrint: true,
 };
 
 export function getPaperDimensionsMm(settings: PrintSettings): {
