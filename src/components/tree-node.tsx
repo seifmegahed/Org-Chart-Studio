@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import { type OrgNode } from "@/lib/org-chart";
+import { MoreVertical } from "lucide-react";
 
 type TreeNodeProps = {
   node: OrgNode;
@@ -90,12 +91,11 @@ export function TreeNode({
 }: TreeNodeProps) {
   const headerRoleText = node.title.trim() || "Role";
   const memberLines = useMemo(() => splitMemberLines(node.name), [node.name]);
-  const bodyNameText =
-    memberLines.reduce(
-      (longestLine, line) =>
-        line.length > longestLine.length ? line : longestLine,
-      "",
-    );
+  const bodyNameText = memberLines.reduce(
+    (longestLine, line) =>
+      line.length > longestLine.length ? line : longestLine,
+    "",
+  );
   const isHorizontalNode = depth > spreadTillLevel;
   const childListHorizontal = depth >= spreadTillLevel;
   const nodeItemClassName = isHorizontalNode
@@ -248,6 +248,17 @@ export function TreeNode({
     pendingFocusRowIndexRef.current = lineIndex + 1;
   };
 
+  const deleteMemberLine = (lineIndex: number) => {
+    if (lineIndex <= 0 || lineIndex >= memberLines.length) {
+      return;
+    }
+
+    const nextLines = [...memberLines];
+    nextLines.splice(lineIndex, 1);
+    onNodeFieldChange(node.id, "name", nextLines.join("\n"));
+    pendingFocusRowIndexRef.current = lineIndex - 1;
+  };
+
   return (
     <li
       className={nodeItemClassName}
@@ -274,13 +285,17 @@ export function TreeNode({
             onOpenMenu(node.id, anchorRect.left, anchorRect.bottom + 6, depth);
           }}
         >
-          <span aria-hidden="true">⋮</span>
+          <MoreVertical  className="h-4"/>
         </button>
         <div className="node-header">
           <input
             value={node.title}
             onChange={(event) =>
-              onNodeFieldChange(node.id, "title", event.target.value.slice(0, 20))
+              onNodeFieldChange(
+                node.id,
+                "title",
+                event.target.value.slice(0, 20),
+              )
             }
             className="node-role-input"
             placeholder="Role"
@@ -311,6 +326,16 @@ export function TreeNode({
                   if (event.key === "Enter" && event.shiftKey) {
                     event.preventDefault();
                     insertMemberLineBelow(lineIndex);
+                    return;
+                  }
+
+                  if (
+                    event.key === "Backspace" &&
+                    lineIndex > 0 &&
+                    memberLine.length === 0
+                  ) {
+                    event.preventDefault();
+                    deleteMemberLine(lineIndex);
                   }
                 }}
                 className="node-name-input"

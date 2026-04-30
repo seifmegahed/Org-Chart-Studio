@@ -113,4 +113,31 @@ describe("Home integration", () => {
       expect(storedProjects[0].root.children[1].children).toHaveLength(1);
     });
   });
+
+  it("adds and removes member lines with keyboard shortcuts", async () => {
+    const user = userEvent.setup();
+
+    render(<Home />);
+
+    await user.click(await screen.findByRole("button", { name: "New Project" }));
+    await user.click(screen.getByRole("button", { name: "Create Project" }));
+
+    const firstMemberInput = await screen.findByPlaceholderText("Name");
+    await user.click(firstMemberInput);
+    await user.keyboard("{Shift>}{Enter}{/Shift}");
+
+    await waitFor(() => {
+      expect(screen.getAllByPlaceholderText("Name")).toHaveLength(2);
+    });
+
+    const secondMemberInput = screen.getAllByPlaceholderText("Name")[1];
+    await user.click(secondMemberInput);
+    await user.keyboard("{Backspace}");
+
+    await waitFor(() => {
+      const memberInputs = screen.getAllByPlaceholderText("Name");
+      expect(memberInputs).toHaveLength(1);
+      expect(memberInputs[0]).toHaveFocus();
+    });
+  });
 });
