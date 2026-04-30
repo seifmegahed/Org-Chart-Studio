@@ -890,7 +890,15 @@ export function moveNodeToParent(
 }
 
 export function formatDate(value: string): string {
-  return new Date(value).toLocaleString();
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const day = `${parsed.getDate()}`.padStart(2, "0");
+  const month = `${parsed.getMonth() + 1}`.padStart(2, "0");
+  const year = `${parsed.getFullYear()}`;
+  return `${day}/${month}/${year}`;
 }
 
 export function downloadJson(fileName: string, payload: unknown): void {

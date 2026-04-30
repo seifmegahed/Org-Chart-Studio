@@ -7,6 +7,7 @@ import {
   duplicateNode,
   findNodeById,
   findNodeDepth,
+  formatDate,
   moveNodeAmongSiblings,
   moveNodeToParent,
   normalizeThemeId,
@@ -118,6 +119,11 @@ describe("org-chart unit", () => {
   it("normalizes unknown themes back to ocean", () => {
     expect(normalizeThemeId("sunset")).toBe("sunset");
     expect(normalizeThemeId("unknown-theme")).toBe("ocean");
+  });
+
+  it("formats timestamps as dd/mm/yyyy", () => {
+    expect(formatDate("2026-01-05T12:34:56.000Z")).toBe("05/01/2026");
+    expect(formatDate("not-a-date")).toBe("not-a-date");
   });
 
   it("clones imported projects with new project and node ids", () => {
