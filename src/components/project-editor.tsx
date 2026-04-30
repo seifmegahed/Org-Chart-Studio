@@ -62,6 +62,7 @@ const ZOOM_FACTOR = 1.1;
 const DEEP_LEVEL_LEFT_ANCHOR_INSET = 18;
 const DEEP_LEVEL_PARENT_LINE_OFFSET = 5;
 const DEEP_LEVEL_CHILD_LINE_OFFSET = 10;
+const CONNECTOR_CORNER_RADIUS = 10;
 const TITLE_MAX_LENGTH = 20;
 const MEMBER_NAME_MAX_LENGTH = 30;
 
@@ -74,6 +75,11 @@ type PrintNodeShape = {
   headerHeight: number;
   title: string;
   names: string[];
+};
+
+type ChartPoint = {
+  x: number;
+  y: number;
 };
 
 function clampZoom(value: number): number {
@@ -91,6 +97,92 @@ function splitMemberLines(value: string): string[] {
 
   const allBlank = lines.every((line) => line.trim().length === 0);
   return allBlank ? [""] : lines;
+}
+
+function toPathNumber(value: number): string {
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isInteger(rounded)
+    ? `${rounded}`
+    : rounded.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function buildRoundedConnectorPath(points: ChartPoint[]): string {
+  const cleanedPoints = points.filter((point, index) => {
+    if (index === 0) {
+      return true;
+    }
+
+    const previous = points[index - 1];
+    if (!previous) {
+      return true;
+    }
+
+    return (
+      Math.abs(point.x - previous.x) > 0.01 || Math.abs(point.y - previous.y) > 0.01
+    );
+  });
+
+  if (cleanedPoints.length === 0) {
+    return "";
+  }
+
+  if (cleanedPoints.length === 1) {
+    const point = cleanedPoints[0];
+    return `M ${toPathNumber(point.x)} ${toPathNumber(point.y)}`;
+  }
+
+  let path = `M ${toPathNumber(cleanedPoints[0].x)} ${toPathNumber(cleanedPoints[0].y)}`;
+
+  for (let index = 1; index < cleanedPoints.length - 1; index += 1) {
+    const previous = cleanedPoints[index - 1];
+    const current = cleanedPoints[index];
+    const next = cleanedPoints[index + 1];
+    if (!previous || !current || !next) {
+      continue;
+    }
+
+    const incomingX = current.x - previous.x;
+    const incomingY = current.y - previous.y;
+    const outgoingX = next.x - current.x;
+    const outgoingY = next.y - current.y;
+    const incomingLength = Math.hypot(incomingX, incomingY);
+    const outgoingLength = Math.hypot(outgoingX, outgoingY);
+
+    if (incomingLength < 0.01 || outgoingLength < 0.01) {
+      path += ` L ${toPathNumber(current.x)} ${toPathNumber(current.y)}`;
+      continue;
+    }
+
+    const turnStrength = incomingX * outgoingY - incomingY * outgoingX;
+    if (Math.abs(turnStrength) < 0.01) {
+      path += ` L ${toPathNumber(current.x)} ${toPathNumber(current.y)}`;
+      continue;
+    }
+
+    const cornerRadius = Math.min(
+      CONNECTOR_CORNER_RADIUS,
+      incomingLength / 2,
+      outgoingLength / 2,
+    );
+    const incomingUnitX = incomingX / incomingLength;
+    const incomingUnitY = incomingY / incomingLength;
+    const outgoingUnitX = outgoingX / outgoingLength;
+    const outgoingUnitY = outgoingY / outgoingLength;
+    const cornerStartX = current.x - incomingUnitX * cornerRadius;
+    const cornerStartY = current.y - incomingUnitY * cornerRadius;
+    const cornerEndX = current.x + outgoingUnitX * cornerRadius;
+    const cornerEndY = current.y + outgoingUnitY * cornerRadius;
+
+    path += ` L ${toPathNumber(cornerStartX)} ${toPathNumber(cornerStartY)}`;
+    path += ` Q ${toPathNumber(current.x)} ${toPathNumber(current.y)} ${toPathNumber(cornerEndX)} ${toPathNumber(cornerEndY)}`;
+  }
+
+  const lastPoint = cleanedPoints[cleanedPoints.length - 1];
+  if (lastPoint) {
+    path += ` L ${toPathNumber(lastPoint.x)} ${toPathNumber(lastPoint.y)}`;
+  }
+
+  return path;
 }
 
 export function ProjectEditor({
@@ -312,13 +404,34 @@ export function ProjectEditor({
             ? childAnchorX - DEEP_LEVEL_CHILD_LINE_OFFSET
             : childAnchorX;
           const deltaX = Math.abs(endX - startX);
-          const path = usesIndentedLeftAnchors
+          const pathPoints = usesIndentedLeftAnchors
             ? deltaX < 0.5
-              ? `M ${parentAnchorX} ${startY} H ${startX} V ${childAnchorY} H ${childAnchorX}`
-              : `M ${parentAnchorX} ${startY} H ${startX} V ${midY} H ${endX} V ${childAnchorY} H ${childAnchorX}`
+              ? [
+                  { x: parentAnchorX, y: startY },
+                  { x: startX, y: startY },
+                  { x: startX, y: childAnchorY },
+                  { x: childAnchorX, y: childAnchorY },
+                ]
+              : [
+                  { x: parentAnchorX, y: startY },
+                  { x: startX, y: startY },
+                  { x: startX, y: midY },
+                  { x: endX, y: midY },
+                  { x: endX, y: childAnchorY },
+                  { x: childAnchorX, y: childAnchorY },
+                ]
             : deltaX < 0.5
-              ? `M ${startX} ${startY} V ${childAnchorY}`
-              : `M ${startX} ${startY} V ${midY} H ${endX} V ${childAnchorY}`;
+              ? [
+                  { x: startX, y: startY },
+                  { x: startX, y: childAnchorY },
+                ]
+              : [
+                  { x: startX, y: startY },
+                  { x: startX, y: midY },
+                  { x: endX, y: midY },
+                  { x: endX, y: childAnchorY },
+                ];
+          const path = buildRoundedConnectorPath(pathPoints);
 
           nextPaths.push(path);
         });
