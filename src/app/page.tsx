@@ -87,23 +87,21 @@ export default function Home() {
   const [projects, setProjects] = useState<OrgProject[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
-  const [reparentSourceNodeId, setReparentSourceNodeId] = useState<string | null>(
-    null,
-  );
+  const [reparentSourceNodeId, setReparentSourceNodeId] = useState<
+    string | null
+  >(null);
   const [notice, setNotice] = useState("");
   const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false);
-  const [createProjectSuggestedName, setCreateProjectSuggestedName] = useState(
-    "Project 1",
-  );
+  const [createProjectSuggestedName, setCreateProjectSuggestedName] =
+    useState("Project 1");
   const [createProjectName, setCreateProjectName] = useState("");
   const [deleteNodeDialog, setDeleteNodeDialog] =
     useState<DeleteNodeDialogState | null>(null);
   const [deleteProjectDialog, setDeleteProjectDialog] =
     useState<DeleteProjectDialogState | null>(null);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
-  const [chartDimensions, setChartDimensions] = useState<ChartDimensions | null>(
-    null,
-  );
+  const [chartDimensions, setChartDimensions] =
+    useState<ChartDimensions | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const pendingPrintRef = useRef(false);
 
@@ -111,7 +109,8 @@ export default function Home() {
     () => projects.find((project) => project.id === activeProjectId) ?? null,
     [activeProjectId, projects],
   );
-  const activePrintSettings = activeProject?.printSettings ?? DEFAULT_PRINT_SETTINGS;
+  const activePrintSettings =
+    activeProject?.printSettings ?? DEFAULT_PRINT_SETTINGS;
 
   const activeTheme = activeProject?.themeId ?? "ocean";
 
@@ -376,10 +375,7 @@ export default function Home() {
     }));
   };
 
-  const handleLegendFieldChange = (
-    field: keyof ChartLegend,
-    value: string,
-  ) => {
+  const handleLegendFieldChange = (field: keyof ChartLegend, value: string) => {
     updateActiveProject((project) => ({
       ...project,
       legend: {
@@ -583,7 +579,9 @@ export default function Home() {
 
     if (moveResult.status === "invalid_cycle") {
       setContextMenu(null);
-      setNotice("You cannot move a node under itself or one of its descendants.");
+      setNotice(
+        "You cannot move a node under itself or one of its descendants.",
+      );
       return;
     }
 
@@ -621,16 +619,18 @@ export default function Home() {
     try {
       const rawText = await file.text();
       const payload: unknown = JSON.parse(rawText);
-      const importedProjects = parseImportedProjects(payload).map(
-        withFreshProjectIds,
-      );
+      const importedProjects =
+        parseImportedProjects(payload).map(withFreshProjectIds);
 
       if (importedProjects.length === 0) {
         setNotice("Could not read projects from this JSON file.");
         return;
       }
 
-      setProjects((currentProjects) => [...importedProjects, ...currentProjects]);
+      setProjects((currentProjects) => [
+        ...importedProjects,
+        ...currentProjects,
+      ]);
       setActiveProjectId(importedProjects[0].id);
       setNotice(`Imported ${importedProjects.length} project(s).`);
     } catch {
@@ -730,7 +730,8 @@ export default function Home() {
       : false;
   const contextNodeDepth =
     activeProject && contextMenu
-      ? findNodeDepth(activeProject.root, contextMenu.nodeId) ?? contextMenu.depth
+      ? (findNodeDepth(activeProject.root, contextMenu.nodeId) ??
+        contextMenu.depth)
       : null;
   const spreadThreshold = activeProject?.spreadTillLevel ?? 3;
   const useHorizontalMoveLabels =
@@ -739,13 +740,13 @@ export default function Home() {
   const moveForwardLabel = useHorizontalMoveLabels ? "Move Right" : "Move Down";
   const canMoveBackward =
     activeProject && contextMenu
-      ? moveNodeAmongSiblings(activeProject.root, contextMenu.nodeId, -1).status ===
-        "moved"
+      ? moveNodeAmongSiblings(activeProject.root, contextMenu.nodeId, -1)
+          .status === "moved"
       : false;
   const canMoveForward =
     activeProject && contextMenu
-      ? moveNodeAmongSiblings(activeProject.root, contextMenu.nodeId, 1).status ===
-        "moved"
+      ? moveNodeAmongSiblings(activeProject.root, contextMenu.nodeId, 1)
+          .status === "moved"
       : false;
   const isEditingProject = Boolean(activeProject);
 
@@ -832,7 +833,8 @@ export default function Home() {
         {activeProject && reparentSourceNode ? (
           <div className="print-hidden mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-[--panel-border] bg-white/90 px-4 py-2 text-sm text-[--main-text]">
             <span>
-              Select a new parent for <strong>{reparentSourceNode.name}</strong>.
+              Select a new parent for <strong>{reparentSourceNode.name}</strong>
+              .
             </span>
             <button
               className="secondary-btn"
@@ -896,7 +898,9 @@ export default function Home() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-[#b73333] hover:bg-[#a22a2a] cursor-pointer"
               onClick={confirmDeleteNode}
@@ -959,9 +963,38 @@ export default function Home() {
           onDelete={handleDeleteNode}
         />
       ) : null}
-      <div className="print-only pointer-events-none fixed bottom-2 left-1/2 z-50 -translate-x-1/2 px-3 text-center text-xs font-medium text-[--muted-text]">
-        created by INP Organization Chart Studio - inp-org-chart-studio.vercel.app
-      </div>
+      <PrintFooter />
     </main>
   );
 }
+
+const PrintFooter = () => {
+  return (
+    <div className="print-only pointer-events-none fixed bottom-2 px-3 text-center text-xs font-medium text-[--muted-text] w-full">
+      <span className="text-center text-xs font-medium text-[--muted-text]">
+        created by INP Organization Chart Studio -
+        inp-org-chart-studio.vercel.app
+      </span>
+      <div className="flex flex-col gap-4">
+        <Separator />
+        <div className="p-6 flex justify-between">
+          <div className="flex flex-col gap-6 w-100">
+            <HandWrittenField text="Date:" />
+            <HandWrittenField text="Signature:" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Separator = () => {
+  return <div className="border-4 border-b"></div>;
+};
+
+const HandWrittenField = ({ text }: { text: string }) => (
+  <div className="flex justify-between">
+    <span className="text-sm font-bold">{text}</span>
+    <div className="border-b w-2/3" />
+  </div>
+);

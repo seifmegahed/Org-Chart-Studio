@@ -118,7 +118,8 @@ function buildRoundedConnectorPath(points: ChartPoint[]): string {
     }
 
     return (
-      Math.abs(point.x - previous.x) > 0.01 || Math.abs(point.y - previous.y) > 0.01
+      Math.abs(point.x - previous.x) > 0.01 ||
+      Math.abs(point.y - previous.y) > 0.01
     );
   });
 
@@ -304,7 +305,8 @@ export function ProjectEditor({
         contentElement.offsetHeight,
       );
 
-      const rootList = contentElement.querySelector<HTMLElement>(".org-tree-root");
+      const rootList =
+        contentElement.querySelector<HTMLElement>(".org-tree-root");
       if (!rootList) {
         setConnectorCanvasSize({ width, height });
         setConnectorPaths([]);
@@ -356,9 +358,9 @@ export function ProjectEditor({
           });
         }
 
-        const childList = parentItem.querySelector<HTMLOListElement | HTMLUListElement>(
-          ":scope > ul",
-        );
+        const childList = parentItem.querySelector<
+          HTMLOListElement | HTMLUListElement
+        >(":scope > ul");
 
         if (!parentCard || !childList) {
           return;
@@ -463,7 +465,8 @@ export function ProjectEditor({
     if (typeof ResizeObserver !== "undefined") {
       observer = new ResizeObserver(scheduleSync);
       observer.observe(contentElement);
-      const rootList = contentElement.querySelector<HTMLElement>(".org-tree-root");
+      const rootList =
+        contentElement.querySelector<HTMLElement>(".org-tree-root");
       if (rootList) {
         observer.observe(rootList);
       }
@@ -606,7 +609,9 @@ export function ProjectEditor({
               max={MAX_SPREAD_TILL_LEVEL}
               value={activeProject.spreadTillLevel}
               onChange={(event) => {
-                onSpreadTillLevelChange(Number.parseInt(event.target.value, 10));
+                onSpreadTillLevelChange(
+                  Number.parseInt(event.target.value, 10),
+                );
               }}
               className="w-14 rounded-md border border-[--panel-border] bg-white px-1.5 py-0.5 text-right text-xs font-bold text-[--main-text] outline-none ring-[--accent-color] focus:ring-2"
               title="Depth where horizontal spread starts"
@@ -725,18 +730,13 @@ export function ProjectEditor({
             {zoomPercent}%
           </span>
         </div>
-        <div className="print-only px-4 pb-2 pt-4">
-          <Image
-            src="/INP%20Egypt%20logo%20full%20flat.svg"
-            alt="INP Egypt logo"
-            width={220}
-            height={62}
-            priority
-          />
-        </div>
+        <PrintHeader
+          date={activeProject.legend.date}
+          revision={activeProject.legend.revisionNumber}
+        />
         <div ref={chartViewportRef} className="chart-viewport">
           <div className="chart-print-scale">
-            <div className="chart-zoom-frame" style={zoomFrameStyle}>
+            <div className="chart-zoom-frame flex-1 h-full" style={zoomFrameStyle}>
               <div
                 ref={chartContentRef}
                 className="chart-content chart-content--svg-connectors inline-block w-max pb-4"
@@ -776,13 +776,19 @@ export function ProjectEditor({
                     const bodyHeight = Math.max(0, node.height - headerHeight);
                     const names = node.names.length > 0 ? node.names : [""];
                     const rowGap = Math.max(16, nameFontSizePx + 5);
-                    const blockHeight = (Math.max(1, names.length) - 1) * rowGap;
-                    const firstRowY = bodyStartY + Math.max(14, (bodyHeight - blockHeight) / 2);
+                    const blockHeight =
+                      (Math.max(1, names.length) - 1) * rowGap;
+                    const firstRowY =
+                      bodyStartY + Math.max(14, (bodyHeight - blockHeight) / 2);
                     const maxRowY = node.y + node.height - 10;
                     const iconCenterX = node.x + 19;
                     const iconScale = 0.62;
                     const iconSize = 24 * iconScale;
-                    const headerRadius = Math.min(10, headerHeight / 2, node.width / 2);
+                    const headerRadius = Math.min(
+                      10,
+                      headerHeight / 2,
+                      node.width / 2,
+                    );
                     const headerPath = `M ${node.x + headerRadius} ${node.y} H ${node.x + node.width - headerRadius} Q ${node.x + node.width} ${node.y} ${node.x + node.width} ${node.y + headerRadius} V ${node.y + headerHeight} H ${node.x} V ${node.y + headerRadius} Q ${node.x} ${node.y} ${node.x + headerRadius} ${node.y} Z`;
 
                     return (
@@ -798,10 +804,7 @@ export function ProjectEditor({
                           stroke="var(--print-node-border, var(--node-border))"
                           strokeWidth="1.2"
                         />
-                        <path
-                          d={headerPath}
-                          fill="var(--accent-color)"
-                        />
+                        <path d={headerPath} fill="var(--accent-color)" />
                         <line
                           x1={node.x}
                           y1={bodyStartY}
@@ -821,11 +824,12 @@ export function ProjectEditor({
                           {node.title}
                         </text>
                         {names.map((personName, personIndex) => {
-                          const rowY = Math.min(maxRowY, firstRowY + personIndex * rowGap);
+                          const rowY = Math.min(
+                            maxRowY,
+                            firstRowY + personIndex * rowGap,
+                          );
                           const displayName =
-                            personName.trim().length > 0
-                              ? personName
-                              : ""
+                            personName.trim().length > 0 ? personName : "";
 
                           return (
                             <g key={`${node.id}-person-${personIndex}`}>
@@ -941,3 +945,42 @@ export function ProjectEditor({
     </section>
   );
 }
+const Separator = () => {
+  return <div className="border-4 border-b"></div>;
+};
+const PrintHeader = ({
+  date,
+  revision,
+}: {
+  date: string;
+  revision: string;
+}) => {
+  return (
+    <div className="print-only flex flex-col gap-8">
+      <Separator />
+      <div className="px-6 flex justify-between py-4">
+        <Image
+          src="/INP%20Egypt%20logo%20full%20flat.svg"
+          alt="INP Egypt logo"
+          width={220}
+          height={62}
+          priority
+        />
+        <div className="flex flex-col pe-10">
+          <span className="text-sm font-bold">Human Resources</span>
+          <span className="text-xs text-gray-500">Organization Chart</span>
+          <span className="text-xs text-gray-500">DOC NO. : Org. Ch</span>
+          <span className="text-xs text-gray-500">Date : {date}</span>
+          <span className="text-xs text-gray-500">Revision : {revision}</span>
+        </div>
+      </div>
+      <Separator />
+      <div className="px-6 py-4">
+        <span className="font-bold">
+          INP-Egypt Human Resource Form (Org. Ch)
+        </span>
+      </div>
+      <Separator />
+    </div>
+  );
+};
