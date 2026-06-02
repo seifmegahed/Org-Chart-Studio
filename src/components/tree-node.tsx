@@ -26,6 +26,7 @@ type TreeNodeProps = {
 };
 
 let measurementElement: HTMLSpanElement | null | undefined;
+const TITLE_MAX_LENGTH = 30;
 const MEMBER_NAME_MAX_LENGTH = 30;
 
 function getMeasurementElement(): HTMLSpanElement | null {
@@ -294,12 +295,12 @@ export function TreeNode({
               onNodeFieldChange(
                 node.id,
                 "title",
-                event.target.value.slice(0, 20),
+                event.target.value.slice(0, TITLE_MAX_LENGTH),
               )
             }
             className="node-role-input"
             placeholder="Role"
-            maxLength={20}
+            maxLength={TITLE_MAX_LENGTH}
           />
         </div>
 
