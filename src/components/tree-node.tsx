@@ -81,6 +81,14 @@ function splitMemberLines(value: string): string[] {
   return lines.length > 0 ? lines : [""];
 }
 
+function splitTitleLines(value: string): string[] {
+  const lines = value
+    .split("\n")
+    .map((line) => line.slice(0, TITLE_MAX_LENGTH));
+
+  return lines.length > 0 ? lines : [""];
+}
+
 export function TreeNode({
   node,
   depth,
@@ -90,7 +98,13 @@ export function TreeNode({
   onNodeFieldChange,
   onOpenMenu,
 }: TreeNodeProps) {
-  const headerRoleText = node.title.trim() || "Role";
+  const titleLines = useMemo(() => splitTitleLines(node.title), [node.title]);
+  const headerRoleText =
+    titleLines.reduce(
+      (longestLine, line) =>
+        line.length > longestLine.length ? line : longestLine,
+      "",
+    ) || "Role";
   const memberLines = useMemo(() => splitMemberLines(node.name), [node.name]);
   const bodyNameText = memberLines.reduce(
     (longestLine, line) =>
@@ -260,6 +274,10 @@ export function TreeNode({
     pendingFocusRowIndexRef.current = lineIndex - 1;
   };
 
+  const updateTitle = (value: string) => {
+    onNodeFieldChange(node.id, "title", splitTitleLines(value).join("\n"));
+  };
+
   return (
     <li
       className={nodeItemClassName}
@@ -289,18 +307,19 @@ export function TreeNode({
           <MoreVertical  className="h-4"/>
         </button>
         <div className="node-header">
-          <input
+          <textarea
             value={node.title}
-            onChange={(event) =>
-              onNodeFieldChange(
-                node.id,
-                "title",
-                event.target.value.slice(0, TITLE_MAX_LENGTH),
-              )
-            }
+            onChange={(event) => {
+              updateTitle(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+              }
+            }}
             className="node-role-input"
             placeholder="Role"
-            maxLength={TITLE_MAX_LENGTH}
+            rows={Math.max(1, titleLines.length)}
           />
         </div>
 

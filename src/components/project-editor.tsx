@@ -73,7 +73,7 @@ type PrintNodeShape = {
   width: number;
   height: number;
   headerHeight: number;
-  title: string;
+  titleLines: string[];
   names: string[];
 };
 
@@ -97,6 +97,19 @@ function splitMemberLines(value: string): string[] {
 
   const allBlank = lines.every((line) => line.trim().length === 0);
   return allBlank ? [""] : lines;
+}
+
+function splitTitleLines(value: string): string[] {
+  const lines = value
+    .split("\n")
+    .map((line) => line.slice(0, TITLE_MAX_LENGTH));
+
+  if (lines.length === 0) {
+    return ["Role"];
+  }
+
+  const allBlank = lines.every((line) => line.trim().length === 0);
+  return allBlank ? ["Role"] : lines;
 }
 
 function toPathNumber(value: number): string {
@@ -216,7 +229,7 @@ export function ProjectEditor({
   const nameFontSizePx = activeProject.fontSizes.namePx;
 
   const nodeTextMap = useMemo(() => {
-    const textMap = new Map<string, { title: string; names: string[] }>();
+    const textMap = new Map<string, { titleLines: string[]; names: string[] }>();
     const stack = [activeProject.root];
 
     while (stack.length > 0) {
@@ -226,7 +239,7 @@ export function ProjectEditor({
       }
 
       textMap.set(currentNode.id, {
-        title: (currentNode.title.trim() || "Role").slice(0, TITLE_MAX_LENGTH),
+        titleLines: splitTitleLines(currentNode.title),
         names: splitMemberLines(currentNode.name),
       });
 
@@ -353,7 +366,7 @@ export function ProjectEditor({
               (headerElement?.getBoundingClientRect().height ?? 0) / scaleY ||
                 Math.min(62, (parentRect.height / scaleY) * 0.5),
             ),
-            title: nodeText?.title ?? "",
+            titleLines: nodeText?.titleLines ?? ["Role"],
             names: nodeText?.names ?? [""],
           });
         }
@@ -790,6 +803,11 @@ export function ProjectEditor({
                       node.width / 2,
                     );
                     const headerPath = `M ${node.x + headerRadius} ${node.y} H ${node.x + node.width - headerRadius} Q ${node.x + node.width} ${node.y} ${node.x + node.width} ${node.y + headerRadius} V ${node.y + headerHeight} H ${node.x} V ${node.y + headerRadius} Q ${node.x} ${node.y} ${node.x + headerRadius} ${node.y} Z`;
+                    const titleLineGap = Math.max(14, titleFontSizePx * 1.2);
+                    const titleBlockHeight =
+                      (Math.max(1, node.titleLines.length) - 1) * titleLineGap;
+                    const firstTitleY =
+                      node.y + headerHeight / 2 - titleBlockHeight / 2;
 
                     return (
                       <g key={node.id}>
@@ -815,13 +833,21 @@ export function ProjectEditor({
                         />
                         <text
                           x={node.x + 12}
-                          y={node.y + headerHeight / 2}
+                          y={firstTitleY}
                           fill="#ffffff"
                           fontSize={titleFontSizePx}
                           fontWeight="800"
                           dominantBaseline="middle"
                         >
-                          {node.title}
+                          {node.titleLines.map((titleLine, titleIndex) => (
+                            <tspan
+                              key={`${node.id}-title-${titleIndex}`}
+                              x={node.x + 12}
+                              dy={titleIndex === 0 ? 0 : titleLineGap}
+                            >
+                              {titleLine}
+                            </tspan>
+                          ))}
                         </text>
                         {names.map((personName, personIndex) => {
                           const rowY = Math.min(

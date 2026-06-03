@@ -140,4 +140,29 @@ describe("Home integration", () => {
       expect(memberInputs[0]).toHaveFocus();
     });
   });
+
+  it("allows node titles to be split with Shift+Enter", async () => {
+    const user = userEvent.setup();
+
+    render(<Home />);
+
+    await user.click(await screen.findByRole("button", { name: "New Project" }));
+    await user.click(screen.getByRole("button", { name: "Create Project" }));
+
+    const titleInput = await screen.findByPlaceholderText("Role");
+    await user.clear(titleInput);
+    await user.type(titleInput, "CEO");
+    await user.keyboard("{Shift>}{Enter}{/Shift}");
+    await user.type(titleInput, "Founder");
+
+    expect(titleInput).toHaveValue("CEO\nFounder");
+
+    await waitFor(() => {
+      const storedProjects = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) ?? "[]",
+      ) as Array<{ root: { title: string } }>;
+
+      expect(storedProjects[0].root.title).toBe("CEO\nFounder");
+    });
+  });
 });
